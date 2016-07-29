@@ -20,13 +20,13 @@ Basic use is a paired down version of the manual process, with the following hig
 * Define the application Coproduct type for your composed DSLs
 * Create an instance of ComposeFree[YourApplicationType] and import it
 
-For example, let's say we wanted to combine a simple Console DSL with the Pure dsl
+For example, let's say we wanted to combine a simple Console DSL with the Pure DSL
 provided in the ComposeFree lib.
 
 First we define an ADT for our Console operations, and pattern match it
 in a NaturalTransformation to an effectful monad.
 
-```tut
+```tut:book:silent
 import scalaz.Id.Id
 import scalaz.~>
 
@@ -42,7 +42,7 @@ object RunConsole extends (ConsoleOps ~> Id) {
 
 Now we need a NaturalTransformation for the Pure dsl.
 
-```tut
+```tut:book:silent
 import composefree.puredsl._
 
 object RunPure extends (PureOp ~> Id) {
@@ -55,7 +55,7 @@ object RunPure extends (PureOp ~> Id) {
 Then we can define the Coproduct type for our application, and obtain our ComposeFree
 instance.
 
-```tut
+```tut:book:silent
 import composefree.ComposeFree
 import scalaz.Coproduct
 
@@ -69,7 +69,7 @@ object compose extends ComposeFree[Program.Program]
 Last we will create an interpreter for our program type by combining our individual
 interpreters.
 
-```tut
+```tut:book:silent
 import composefree.syntax._
 
 val interp = RunConsole.or(RunPure)
@@ -77,7 +77,7 @@ val interp = RunConsole.or(RunPure)
 
 And finally we can define a program and execute it.
 
-```tut
+```tut:book
 import compose._
 
 val prog = for {

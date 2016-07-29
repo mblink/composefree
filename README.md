@@ -20,90 +20,74 @@ Basic use is a paired down version of the manual process, with the following hig
 * Define the application Coproduct type for your composed DSLs
 * Create an instance of ComposeFree[YourApplicationType] and import it
 
-For example, let's say we wanted to combine a simple Console DSL with the Pure dsl
+For example, let's say we wanted to combine a simple Console DSL with the Pure DSL
 provided in the ComposeFree lib.
 
 First we define an ADT for our Console operations, and pattern match it
 in a NaturalTransformation to an effectful monad.
 
 ```scala
-scala> import scalaz.Id.Id
 import scalaz.Id.Id
+import scalaz.~>
 
-scala> import scalaz.~>
-import scalaz.$tilde$greater
+sealed trait ConsoleOps[A]
+case class print(s: String) extends ConsoleOps[Unit]
 
-scala> sealed trait ConsoleOps[A]
-defined trait ConsoleOps
-
-scala> case class print(s: String) extends ConsoleOps[Unit]
-defined class print
-
-scala> object RunConsole extends (ConsoleOps ~> Id) {
-     |   def apply[A](op: ConsoleOps[A]) = op match {
-     |     case print(s) => println(s)
-     |   }
-     | }
-defined object RunConsole
+object RunConsole extends (ConsoleOps ~> Id) {
+  def apply[A](op: ConsoleOps[A]) = op match {
+    case print(s) => println(s)
+  }
+}
 ```
 
 Now we need a NaturalTransformation for the Pure dsl.
 
 ```scala
-scala> import composefree.puredsl._
 import composefree.puredsl._
 
-scala> object RunPure extends (PureOp ~> Id) {
-     |   def apply[A](op: PureOp[A]) = op match {
-     |     case Pure(a) => a
-     |   }
-     | }
-defined object RunPure
+object RunPure extends (PureOp ~> Id) {
+  def apply[A](op: PureOp[A]) = op match {
+    case Pure(a) => a
+  }
+}
 ```
 
 Then we can define the Coproduct type for our application, and obtain our ComposeFree
 instance.
 
 ```scala
-scala> import composefree.ComposeFree
 import composefree.ComposeFree
-
-scala> import scalaz.Coproduct
 import scalaz.Coproduct
 
-scala> object Program {
-     |   type Program[A] = Coproduct[ConsoleOps, PureOp, A]
-     | }
-defined object Program
+object Program {
+  type Program[A] = Coproduct[ConsoleOps, PureOp, A]
+}
 
-scala> object compose extends ComposeFree[Program.Program]
-defined object compose
+object compose extends ComposeFree[Program.Program]
 ```
 
 Last we will create an interpreter for our program type by combining our individual
 interpreters.
 
 ```scala
-scala> import composefree.syntax._
 import composefree.syntax._
 
-scala> val interp = RunConsole.or(RunPure)
-interp: composefree.syntax.CNat[ConsoleOps,composefree.puredsl.PureOp,scalaz.Id.Id] = composefree.syntax$CNat@19092ea8
+val interp = RunConsole.or(RunPure)
 ```
 
 And finally we can define a program and execute it.
 
 ```scala
-scala> import compose._
 import compose._
+// import compose._
 
-scala> val prog = for {
-     |   s <- pure("Hello world!")
-     |   _ <- print(s)
-     | } yield ()
-prog: scalaz.Free[Program.Program,Unit] = Gosub(Suspend(Coproduct(\/-(Pure(Hello world!)))),<function1>)
+val prog = for {
+  s <- pure("Hello world!")
+  _ <- print(s)
+} yield ()
+// prog: scalaz.Free[Program.Program,Unit] = Gosub(Suspend(Coproduct(\/-(Pure(Hello world!)))),<function1>)
 
-scala> prog.runWith(interp)
-Hello world!
-res0: scalaz.Id.Id[Unit] = ()
+prog.runWith(interp)
+// Hello world!
+// res6: scalaz.Id.Id[Unit] = ()
 ```
