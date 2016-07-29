@@ -5,7 +5,7 @@ import composefree.puredsl._
 import composefree.example.console._
 import composefree.example.dsl._
 import composefree.example.numbers._
-import scalaz.{Coproduct, Free, Trampoline, ~>}
+import scalaz.{Coproduct, Free, ~>}
 import scalaz.Trampoline._
 
 object dsl {

@@ -1,7 +1,7 @@
 package composefree.example
 
 import scalaz.Trampoline._
-import scalaz.{Free, Trampoline, ~>}
+import scalaz.{Free, ~>}
 
 object numbers {
   sealed trait Numbers[A]
