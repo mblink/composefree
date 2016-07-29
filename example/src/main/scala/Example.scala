@@ -1,8 +1,6 @@
 package composefree.example
 
-import composefree.ComposeFree
 import composefree.example.console._
-import composefree.example.dsl._
 import composefree.example.numbers._
 import composefree.puredsl._
 
