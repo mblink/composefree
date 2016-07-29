@@ -20,6 +20,9 @@ trait ComposeFree[M[_]] {
 
   implicit def mkOp[F[_], A](fa: F[A])(implicit i: Inject[F, M]): Free[M, A] =
     fa.op
+}
+
+object syntax {
 
   class CNat[F[_], G[_], H[_]](f: F ~> H, g: G ~> H)
   extends (Coproduct[F, G, ?] ~> H) {
@@ -32,7 +35,7 @@ trait ComposeFree[M[_]] {
     def or[H[_]](ont: H ~> G) = new CNat[F, H, G](nt, ont)
   }
 
-  implicit class ComposeFreeOps[A](p: Free[M, A]) {
+  implicit class ComposeFreeOps[M[_], A](p: Free[M, A]) {
     def runWith[T[_]: Monad](i: (M ~> T)): T[A] = p.foldMap(i)
   }
 }
