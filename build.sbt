@@ -25,11 +25,13 @@ lazy val commonSettings = Seq(
 
 lazy val core = project.in(file("core")).
   settings(commonSettings: _*).
+  settings(tutSettings).
   settings(
     name := "composefree",
     libraryDependencies ++= Seq(
       "org.scalaz" %% "scalaz-core" % "7.2.4"),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.8.0"),
+    tutTargetDirectory := file("."),
     bintrayOrganization := Some("bondlink"),
     bintrayReleaseOnPublish in ThisBuild := false,
     bintrayRepository := "composefree",
