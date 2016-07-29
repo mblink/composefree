@@ -21,6 +21,6 @@ object Example {
   } yield a + b + c + r
 
   def main(args: Array[String]): Unit = {
-    println(prog.runWith(interp))
+    println(prog.runWith(interp).run)
   }
 }

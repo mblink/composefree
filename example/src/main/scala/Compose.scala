@@ -5,8 +5,8 @@ import composefree.puredsl._
 import composefree.example.console._
 import composefree.example.dsl._
 import composefree.example.numbers._
-import scalaz.{Coproduct, ~>}
-import scalaz.Id.Id
+import scalaz.{Coproduct, Free, Trampoline, ~>}
+import scalaz.Trampoline._
 
 object dsl {
   type PN[A] = Coproduct[PureOp, Numbers, A]
@@ -15,13 +15,13 @@ object dsl {
 
 object examplecompose extends ComposeFree[Program] {
 
-  object RunPure extends (PureOp ~> Id) {
+  object RunPure extends (PureOp ~> Free.Trampoline) {
     def apply[A](p: PureOp[A]) = p match {
-      case Pure(p) => p
+      case Pure(p) => delay(p)
     }
   }
 
-  val interp: Program ~> Id =
-    (RunConsole.or(RunPure.or(RunNumbers()): (PN ~> Id)): (Program ~> Id))
+  val interp: Program ~> Free.Trampoline =
+    RunConsole.or(RunPure.or(RunNumbers()): (PN ~> Free.Trampoline))
 }
 

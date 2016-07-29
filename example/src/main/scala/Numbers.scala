@@ -1,7 +1,7 @@
 package composefree.example
 
-import scalaz.Id.Id
-import scalaz.~>
+import scalaz.Trampoline._
+import scalaz.{Free, Trampoline, ~>}
 
 object numbers {
   sealed trait Numbers[A]
@@ -12,13 +12,13 @@ object numbers {
 
   object RunNumbers {
 
-    def apply() = new (Numbers ~> Id) {
+    def apply() = new (Numbers ~> Free.Trampoline) {
       var x = 0
       def apply[A](n: Numbers[A]) = n match {
-        case set(i) => (x = i)
-        case get() => x
-        case add(i) => { x = x+i; x }
-        case minus(i) => { x = x-i; x }
+        case set(i) => delay(x = i)
+        case get() => delay(x)
+        case add(i) => delay({ x = x+i; x })
+        case minus(i) => delay({ x = x-i; x })
       }
     }
   }
