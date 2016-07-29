@@ -17,7 +17,7 @@ Basic use is a paired down version of the manual process, with the following hig
 
 * Define DSLs as sealed families of case classes
 * Define interpreters for DSLs as NaturalTransformations
-* Define the applicaiton Coproduct type for your composed DSLs
+* Define the application Coproduct type for your composed DSLs
 * Create an instance of ComposeFree[YourApplicationType] and import it
 
 For example, let's say we wanted to combine a simple Console DSL with the Pure dsl

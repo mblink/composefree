@@ -17,7 +17,7 @@ Basic use is a paired down version of the manual process, with the following hig
 
 * Define DSLs as sealed families of case classes
 * Define interpreters for DSLs as NaturalTransformations
-* Define the applicaiton Coproduct type for your composed DSLs
+* Define the application Coproduct type for your composed DSLs
 * Create an instance of ComposeFree[YourApplicationType] and import it
 
 For example, let's say we wanted to combine a simple Console DSL with the Pure dsl
@@ -88,7 +88,7 @@ scala> import composefree.syntax._
 import composefree.syntax._
 
 scala> val interp = RunConsole.or(RunPure)
-interp: composefree.syntax.CNat[ConsoleOps,composefree.puredsl.PureOp,scalaz.Id.Id] = composefree.syntax$CNat@306331ed
+interp: composefree.syntax.CNat[ConsoleOps,composefree.puredsl.PureOp,scalaz.Id.Id] = composefree.syntax$CNat@19092ea8
 ```
 
 And finally we can define a program and execute it.
