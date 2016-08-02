@@ -13,7 +13,7 @@ resolvers += Resolver.bintrayRepo("bondlink", "composefree")
 libraryDependencies += "bondlink" %% "composefree" % "0.1.0"
 ```
 
-Basic use is a paired down version of the manual process, with the following high level steps:
+Basic use is a pared down version of the manual process, with the following high level steps:
 
 * Define DSLs as sealed families of case classes
 * Define interpreters for DSLs as NaturalTransformations
