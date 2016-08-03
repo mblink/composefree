@@ -47,7 +47,7 @@ import composefree.puredsl._
 
 object RunPure extends (PureOp ~> Id) {
   def apply[A](op: PureOp[A]) = op match {
-    case Pure(a) => a
+    case pure(a) => a
   }
 }
 ```
@@ -81,7 +81,10 @@ And finally we can define a program and execute it.
 import compose._
 
 val prog = for {
-  s <- pure("Hello world!")
+  s <- pure("Hello world!").as[PureOp]
+  // use of .as[T] helper to cast as super type is
+  // required for operations with type parameters that cannot be
+  // implicitly converted to the correct coproduct member type
   _ <- print(s)
 } yield ()
 

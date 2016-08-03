@@ -47,7 +47,7 @@ import composefree.puredsl._
 
 object RunPure extends (PureOp ~> Id) {
   def apply[A](op: PureOp[A]) = op match {
-    case Pure(a) => a
+    case pure(a) => a
   }
 }
 ```
@@ -82,10 +82,13 @@ import compose._
 // import compose._
 
 val prog = for {
-  s <- pure("Hello world!")
+  s <- pure("Hello world!").as[PureOp]
+  // use of .as[T] helper to cast as super type is
+  // required for operations with type parameters that cannot be
+  // implicitly converted to the correct coproduct member type
   _ <- print(s)
 } yield ()
-// prog: scalaz.Free[Program.Program,Unit] = Gosub(Suspend(Coproduct(\/-(Pure(Hello world!)))),<function1>)
+// prog: scalaz.Free[Program.Program,Unit] = Gosub(Suspend(Coproduct(\/-(pure(Hello world!)))),<function1>)
 
 prog.runWith(interp)
 // Hello world!
