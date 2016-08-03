@@ -4,18 +4,19 @@ import scala.language.higherKinds
 import scala.language.implicitConversions
 import scalaz.{Coproduct, Free, Inject, Monad, ~>}
 import scalaz.Inject._
+import scalaz.Liskov.<~<
 
 object puredsl {
 
   sealed trait PureOp[A]
-  case class Pure[A](a: A) extends PureOp[A]
-  def pure[A](a: A): PureOp[A] = Pure(a)
+  case class pure[A](a: A) extends PureOp[A]
 }
 
 trait ComposeFree[M[_]] {
 
   implicit class MkOp[F[_], A](fa: F[A]) {
     def op(implicit i: Inject[F, M]): Free[M, A] = Free.liftF(i.inj(fa))
+    def as[G[_]](implicit ev: F[A] <~< G[A]): G[A] = ev(fa)
   }
 
   implicit def mkOp[F[_], A](fa: F[A])(implicit i: Inject[F, M]): Free[M, A] =

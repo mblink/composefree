@@ -18,7 +18,7 @@ object examplecompose extends ComposeFree[Program] {
 
   object RunPure extends (PureOp ~> Free.Trampoline) {
     def apply[A](p: PureOp[A]) = p match {
-      case Pure(p) => delay(p)
+      case pure(p) => delay(p)
     }
   }
 

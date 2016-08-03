@@ -10,7 +10,7 @@ object Example {
   val prog = {
     import examplecompose._
     for {
-      init <- pure(2)
+      init <- pure(2).as[PureOp]
       _ <- set(init)
       a <- add(3)
       b <- minus(2)
