@@ -78,19 +78,55 @@ val interp = RunConsole.or(RunPure)
 And finally we can define a program and execute it.
 
 ```scala
-import compose._
-// import compose._
-
-val prog = for {
-  s <- pure("Hello world!").as[PureOp]
-  // use of .as[T] helper to cast as super type is
-  // required for operations with type parameters that cannot be
-  // implicitly converted to the correct coproduct member type
-  _ <- print(s)
-} yield ()
+val prog = {
+  import compose._
+  for {
+    s <- pure("Hello world!").as[PureOp]
+    // use of .as[T] helper to cast as super type is
+    // required for operations with type parameters that cannot be
+    // implicitly converted to the correct coproduct member type
+    _ <- print(s)
+  } yield ()
+}
 // prog: scalaz.Free[Program.Program,Unit] = Gosub(Suspend(Coproduct(\/-(pure(Hello world!)))),<function1>)
 
 prog.runWith(interp)
 // Hello world!
 // res6: scalaz.Id.Id[Unit] = ()
+```
+
+Composite commands can be defined in individual DSLs and mixed into
+larger programs as follows.
+
+```scala
+object PureComposite {
+  import composefree.syntax._
+  import composefree.syntax.lift._
+  import scalaz.Free
+
+  def makeTuple(s1: String, s2: String): Free[PureOp, (String, String)] =
+    for {
+      a <- pure(s1).as[PureOp]
+      b <- pure(s2).as[PureOp]
+    } yield (a, b)
+}
+// defined object PureComposite
+
+import compose._
+// import compose._
+
+import Program._
+// import Program._
+
+val prog = for {
+  s <- PureComposite.makeTuple("Hello", "World!").as[Program]
+  _ <- print(s._1)
+  _ <- print(s._2)
+} yield ()
+// prog: scalaz.Free[Program.Program,Unit] = Gosub(Gosub(Suspend(Coproduct(\/-(pure(Hello)))),<function1>),<function1>)
+
+prog.runWith(interp)
+// Hello
+// World!
+// res7: scalaz.Id.Id[Unit] = ()
 ```

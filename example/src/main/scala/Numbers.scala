@@ -1,5 +1,6 @@
 package composefree.example
 
+import composefree.syntax.lift._
 import scalaz.Trampoline._
 import scalaz.{Free, ~>}
 
@@ -9,6 +10,13 @@ object numbers {
   case class get() extends Numbers[Int]
   case class add(i: Int) extends Numbers[Int]
   case class minus(i: Int) extends Numbers[Int]
+
+  def update(fn: Int => Int): Free[Numbers, Int] =
+    for {
+      c <- get()
+      r = fn(c)
+      _ <- set(r)
+    } yield r
 
   object RunNumbers {
 

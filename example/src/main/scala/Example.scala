@@ -1,6 +1,7 @@
 package composefree.example
 
 import composefree.example.console._
+import composefree.example.dsl._
 import composefree.example.numbers._
 import composefree.puredsl._
 import composefree.syntax._
@@ -13,6 +14,7 @@ object Example {
       init <- pure(2).as[PureOp]
       _ <- set(init)
       a <- add(3)
+      _ <- update(_ + 1).as[Program]
       b <- minus(2)
       _ <- print(b.toString)
       c <- add(10)

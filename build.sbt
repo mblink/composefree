@@ -3,7 +3,7 @@ name := """composefree"""
 scalaVersion := "2.11.8"
 
 lazy val commonSettings = Seq(
-  version := "0.1.1",
+  version := "0.2.1",
   scalaVersion := "2.11.8",
   organization := "bondlink",
   scalacOptions ++= Seq(
@@ -18,7 +18,6 @@ lazy val commonSettings = Seq(
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",
     "-Xfuture"),
-  publishLocal := {},
   bintrayReleaseOnPublish in ThisBuild := false)
 
 lazy val core = project.in(file("core")).
