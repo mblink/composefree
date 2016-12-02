@@ -5,6 +5,7 @@ import composefree.example.dsl._
 import composefree.example.numbers._
 import composefree.puredsl._
 import composefree.syntax._
+import scalaz.syntax.applicative._
 
 object Example {
 
@@ -13,8 +14,9 @@ object Example {
     for {
       init <- pure(2).as[PureOp]
       _ <- set(init)
-      a <- add(3)
-      _ <- update(_ + 1).as[Program]
+      x <- (pure(2).as[PureOp].opAp |@| pure(1).as[PureOp].opAp)(_ + _)
+      a <- add(x)
+      _ <- update(_ + 1).as[Program].op
       b <- minus(2)
       _ <- print(b.toString)
       c <- add(10)

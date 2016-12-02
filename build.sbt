@@ -3,7 +3,7 @@ name := """composefree"""
 scalaVersion := "2.11.8"
 
 lazy val commonSettings = Seq(
-  version := "0.2.1",
+  version := "0.3.1",
   scalaVersion := "2.11.8",
   organization := "bondlink",
   scalacOptions ++= Seq(
