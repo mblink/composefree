@@ -56,11 +56,14 @@ trait ComposeOps extends LPSyntax {
     }
   }
 
-  type ApM[G[_], X] = Coproduct[FreeAp[G, ?], Free[G, ?], X]
+  type ApM[G[_], X] = Coproduct[FreeAp[Free[G, ?], ?], Free[G, ?], X]
+
   implicit class ComposeFreeApMOps[G[_], A](p: Free[ApM[G, ?], A]) {
-    def runWith[T[_]: Applicative: Monad](a: (G ~> T), m: (G ~>T)): T[A] =
+    def runWith[T[_]: Applicative: Monad](a: (G ~> T), m: (G ~> T)): T[A] =
       p.foldMap(new (ApM[G, ?] ~> T) { def apply[X](x: ApM[G, X]) =
-        x.run.fold(_.foldMap(a), _.foldMap(m)) })
+        x.run.fold(_.foldMap(new (Free[G, ?] ~> T) {
+          def apply[Z](x: Free[G, Z]) = x.foldMap(a) }),
+          _.foldMap(m)) })
 
     def runWith[T[_]: Applicative: Monad](i: (G ~> T)): T[A] = runWith(i, i)
   }
@@ -78,26 +81,36 @@ trait ComposeOps extends LPSyntax {
 trait ComposeFree[M[_]] extends ComposeOps {
 
   type FM[A] = Free[M, A]
-  type FA[A] = FreeAp[M, A]
+  type FA[A] = FreeAp[FM, A]
+  type Composed[A] = Free[Coproduct[FA, FM, ?], A]
 
   implicit class MkOp[F[_], A](fa: F[A]) {
-    def op(implicit i: Inject[F, M]): Free[ApM[M, ?], A] =
-      Free.liftF[Coproduct[FA, FM, ?], A](Coproduct.right[FA](Free.liftF(i.inj(fa)): FM[A]))
-    def opAp(implicit i: Inject[F, M]): FA[A] = FreeAp.lift(i.inj(fa))
-
+    def op(implicit i: Inject[F, M]): FM[A] = Free.liftF(i.inj(fa))
+    def opAp(implicit i: Inject[F, M]): FA[A] = FreeAp.lift(Free.liftF(i.inj(fa)): FM[A])
+    def apM(implicit i: Inject[F, M]): Composed[A] = fa.op.op
   }
 
   implicit class MKFOp[A](fa: FM[A]) {
-    def op = Free.liftF[Coproduct[FA, FM, ?], A](Coproduct.right[FA](fa))
+    def op: Composed[A] = Free.liftF[Coproduct[FA, FM, ?], A](Coproduct.right[FA](fa))
+
+    def opAp: FA[A] = FreeAp.lift(fa)
+
+    def runWith[T[_]: Applicative: Monad](a: (M ~> T), m: (M ~>T)): T[A] =
+      fa.op.runWith(a, m)
+    def runWith[T[_]: Applicative: Monad](i: (M ~> T)): T[A] = runWith(i, i)
   }
 
   implicit class MKFAOp[A](fa: FA[A]) {
-    def op = Free.liftF[Coproduct[FA, FM, ?], A](Coproduct.left[FM](fa))
+    def op: Composed[A] = Free.liftF[Coproduct[FA, FM, ?], A](Coproduct.left[FM](fa))
+
+    def runWith[T[_]: Applicative: Monad](a: (M ~> T), m: (M ~>T)): T[A] =
+      fa.op.runWith(a, m)
+    def runWith[T[_]: Applicative: Monad](i: (M ~> T)): T[A] = runWith(i, i)
   }
 
-  implicit def mkOp[F[_], A](fa: F[A])(implicit i: Inject[F, M]): Free[ApM[M, ?], A] = fa.op
-  implicit def mkFOp[A](fa: Free[M, A]): Free[ApM[M, ?], A] = fa.op
-  implicit def mkFAOp[A](fa: FreeAp[M, A]): Free[ApM[M, ?], A] = fa.op
+  implicit def mkOpM[F[_], A](fa: F[A])(implicit i: Inject[F, M]): Free[M, A] = fa.op
+  implicit def mkFOp[A](fa: Free[M, A]): Composed[A] = fa.op
+  implicit def mkFAOp[A](fa: FreeAp[Free[M, ?], A]): Composed[A] = fa.op
 
 }
 
