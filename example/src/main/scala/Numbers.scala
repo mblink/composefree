@@ -1,7 +1,7 @@
 package composefree.example
 
 import composefree.syntax.lift._
-import scalaz.Trampoline._
+import scala.concurrent.Future
 import scalaz.{Free, ~>}
 
 object numbers {
@@ -20,13 +20,13 @@ object numbers {
 
   object RunNumbers {
 
-    def apply() = new (Numbers ~> Free.Trampoline) {
+    def apply() = new (Numbers ~> Future) {
       var x = 0
       def apply[A](n: Numbers[A]) = n match {
-        case set(i) => delay(x = i)
-        case get() => delay(x)
-        case add(i) => delay({ x = x+i; x })
-        case minus(i) => delay({ x = x-i; x })
+        case set(i) => Future.successful(x = i)
+        case get() => Future.successful(x)
+        case add(i) => Future.successful({ x = x+i; x })
+        case minus(i) => Future.successful({ x = x-i; x })
       }
     }
   }

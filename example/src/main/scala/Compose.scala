@@ -6,8 +6,8 @@ import composefree.example.console._
 import composefree.example.dsl._
 import composefree.example.numbers._
 import composefree.syntax._
+import scala.concurrent.Future
 import scalaz.{Coproduct, Free, ~>}
-import scalaz.Trampoline._
 
 object dsl {
   type PN[A] = Coproduct[PureOp, Numbers, A]
@@ -16,13 +16,13 @@ object dsl {
 
 object examplecompose extends ComposeFree[Program] {
 
-  object RunPure extends (PureOp ~> Free.Trampoline) {
+  object RunPure extends (PureOp ~> Future) {
     def apply[A](p: PureOp[A]) = p match {
-      case pure(p) => delay(p)
+      case pure(p) => Future.successful(p)
     }
   }
 
-  val interp: Program ~> Free.Trampoline =
-    RunConsole.or(RunPure.or(RunNumbers()): (PN ~> Free.Trampoline))
+  val interp: Program ~> Future =
+    RunConsole.or(RunPure.or(RunNumbers()): (PN ~> Future))
 }
 

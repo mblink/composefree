@@ -5,20 +5,32 @@ import composefree.example.dsl._
 import composefree.example.numbers._
 import composefree.puredsl._
 import composefree.syntax._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.Await
 import scalaz.std.option._
+import scalaz.std.scalaFuture._
 import scalaz.syntax.applicative._
 import scalaz.syntax.traverse._
 
 object Example {
   import examplecompose._
 
+  def stall[A](a: A): FM[A] =
+    for {
+      _ <- pure(println("stalling")).as[PureOp]
+      _ <- pure { Thread.sleep(3500L) }.as[PureOp]
+      _ = println(a)
+    } yield a
+
   val prog =
     for {
       init <- pure(2).as[PureOp].apM
       _ <- set(init).apM
       _ <- update(_ + 1).as[Program].op
-      x <- (pure(2).as[PureOp].opAp |@| pure(1).as[PureOp].opAp)(_ + _)
-      a <- add(3)
+      x <- ((stall(2).opAp |@| stall(1).opAp)(_ + _): FA[Int]).op
+      t <- stall(3)
+      a <- add(t)
       _ <- Option("foo").traverseU(print(_).op)
       b <- minus(2)
       _ <- print(b.toString)
@@ -27,6 +39,6 @@ object Example {
     } yield a + b + c + r
 
   def main(args: Array[String]): Unit = {
-    println(prog.runWith(examplecompose.interp).run)
+    println(Await.result(prog.runWith(examplecompose.interp), 10.seconds))
   }
 }
