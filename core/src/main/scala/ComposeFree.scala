@@ -59,13 +59,17 @@ trait ComposeOps extends LPSyntax {
   type ApM[G[_], X] = Coproduct[FreeAp[Free[G, ?], ?], Free[G, ?], X]
 
   implicit class ComposeFreeApMOps[G[_], A](p: Free[ApM[G, ?], A]) {
-    def runWith[T[_]: Applicative: Monad](a: (G ~> T), m: (G ~> T)): T[A] =
+    def runWith[T[_]](a: (G ~> T), m: (G ~> T))(
+          implicit ap: Applicative[T], mn: Monad[T]): T[A] =
       p.foldMap(new (ApM[G, ?] ~> T) { def apply[X](x: ApM[G, X]) =
-        x.run.fold(_.foldMap(new (Free[G, ?] ~> T) {
-          def apply[Z](x: Free[G, Z]) = x.foldMap(a) }),
-          _.foldMap(m)) })
+        x.run.fold(
+          _.foldMap(new (Free[G, ?] ~> T) {
+            def apply[Z](x: Free[G, Z]) = x.foldMap(a)(mn)
+          })(ap),
+          _.foldMap(m)(mn))})(mn)
 
-    def runWith[T[_]: Applicative: Monad](i: (G ~> T)): T[A] = runWith(i, i)
+    def runWith[T[_]](i: (G ~> T))(implicit ap: Applicative[T], m: Monad[T]): T[A] =
+      runWith(i, i)(ap, m)
   }
 
   object lift {

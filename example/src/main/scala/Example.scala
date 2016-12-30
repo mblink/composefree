@@ -23,7 +23,9 @@ object Example {
       _ = println(a)
     } yield a
 
-  val prog =
+  val progA: Composed[Int] = ((stall(1).opAp |@| stall(2).opAp)(_ + _)).op
+
+  val prog: Composed[Int] =
     for {
       init <- pure(2).as[PureOp].apM
       _ <- set(init).apM

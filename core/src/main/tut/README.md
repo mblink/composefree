@@ -10,7 +10,7 @@ To use it, include in build.sbt
 ```scala
 resolvers += Resolver.bintrayRepo("bondlink", "composefree")
 
-libraryDependencies += "bondlink" %% "composefree" % "0.1.0"
+libraryDependencies += "bondlink" %% "composefree" % "0.3.2"
 ```
 
 Basic use is a pared down version of the manual process, with the following high level steps:
@@ -78,7 +78,7 @@ val interp = RunConsole.or(RunPure)
 And finally we can define a program and execute it.
 
 ```tut:book
-val prog = {
+val prog: compose.Composed[Unit] = {
   import compose._
   for {
     s <- pure("Hello world!").as[PureOp]
@@ -98,8 +98,8 @@ larger programs as follows.
 ```tut:book
 
 object PureComposite {
+  import compose.lift._
   import composefree.syntax._
-  import composefree.syntax.lift._
   import scalaz.Free
 
   def makeTuple(s1: String, s2: String): Free[PureOp, (String, String)] =
