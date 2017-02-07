@@ -2,6 +2,7 @@ package composefree
 
 import scala.language.higherKinds
 import scala.language.implicitConversions
+import scala.language.reflectiveCalls
 import scalaz.{Applicative, Coproduct, Free, FreeAp, Inject, Monad, ~>}
 import scalaz.Inject._
 import scalaz.Liskov.<~<
@@ -56,22 +57,6 @@ trait ComposeOps extends LPSyntax {
     }
   }
 
-  type ApM[G[_], X] = Coproduct[FreeAp[Free[G, ?], ?], Free[G, ?], X]
-
-  implicit class ComposeFreeApMOps[G[_], A](p: Free[ApM[G, ?], A]) {
-    def runWith[T[_]](a: (G ~> T), m: (G ~> T))(
-          implicit ap: Applicative[T], mn: Monad[T]): T[A] =
-      p.foldMap(new (ApM[G, ?] ~> T) { def apply[X](x: ApM[G, X]) =
-        x.run.fold(
-          _.foldMap(new (Free[G, ?] ~> T) {
-            def apply[Z](x: Free[G, Z]) = x.foldMap(a)(mn)
-          })(ap),
-          _.foldMap(m)(mn))})(mn)
-
-    def runWith[T[_]](i: (G ~> T))(implicit ap: Applicative[T], m: Monad[T]): T[A] =
-      runWith(i, i)(ap, m)
-  }
-
   object lift {
     implicit class ToFreeOps[M[_], A](m: M[A]) {
       def liftF: Free[M, A] = Free.liftF(m)
@@ -84,37 +69,81 @@ trait ComposeOps extends LPSyntax {
 
 trait ComposeFree[M[_]] extends ComposeOps {
 
-  type FM[A] = Free[M, A]
-  type FA[A] = FreeAp[FM, A]
-  type Composed[A] = Free[Coproduct[FA, FM, ?], A]
+  type RecNode[A] = Coproduct[ComposeNode, M, A]
+  type RecProg[A] = Free[RecNode, A]
+  type RecApProg[A] = FreeAp[RecNode, A]
 
-  implicit class MkOp[F[_], A](fa: F[A]) {
-    def op(implicit i: Inject[F, M]): FM[A] = Free.liftF(i.inj(fa))
-    def opAp(implicit i: Inject[F, M]): FA[A] = FreeAp.lift(Free.liftF(i.inj(fa)): FM[A])
-    def apM(implicit i: Inject[F, M]): Composed[A] = fa.op.op
+  type Composed[A] = RecProg[A]
+
+  sealed trait ComposeNode[A]
+  case class MNode[A](run: Free[RecNode, A]) extends ComposeNode[A]
+  case class ANode[A](run: FreeAp[RecNode, A]) extends ComposeNode[A]
+
+
+  def recInterp[G[_]](fg: (M ~> G))(implicit m: Monad[G], ap: Applicative[G])=
+    new (ComposeNode ~> G) { self =>
+      lazy val interp: (RecNode ~> G) =
+        new (RecNode ~> G) {
+          def apply[A](cp: RecNode[A]) =
+            cp.fold(self, fg)
+        }
+
+      def apply[A](nf: ComposeNode[A]) = nf match {
+        case MNode(mn) => mn.foldMap(interp)(m)
+        case ANode(apn) => apn.foldMap(interp)(ap)
+      }
+    }
+
+  implicit class FOps[F[_], A](fa: F[A])(implicit i: Inject[F, M]) {
+    def op: RecProg[A] =
+      Free.liftF(Coproduct.right[ComposeNode](i.inj(fa)): RecNode[A])
+    def opAp: RecApProg[A] =
+      FreeAp.lift(Coproduct.right[ComposeNode](i.inj(fa)): RecNode[A])
   }
 
-  implicit class MKFOp[A](fa: FM[A]) {
-    def op: Composed[A] = Free.liftF[Coproduct[FA, FM, ?], A](Coproduct.right[FA](fa))
-
-    def opAp: FA[A] = FreeAp.lift(fa)
-
-    def runWith[T[_]: Applicative: Monad](a: (M ~> T), m: (M ~>T)): T[A] =
-      fa.op.runWith(a, m)
-    def runWith[T[_]: Applicative: Monad](i: (M ~> T)): T[A] = runWith(i, i)
+  implicit class MOps[A](ma: M[A]) {
+    def op: RecProg[A] =
+      Free.liftF(Coproduct.right[ComposeNode](ma): RecNode[A])
+    def opAp: RecApProg[A] =
+      FreeAp.lift(Coproduct.right[ComposeNode](ma): RecNode[A])
   }
 
-  implicit class MKFAOp[A](fa: FA[A]) {
-    def op: Composed[A] = Free.liftF[Coproduct[FA, FM, ?], A](Coproduct.left[FM](fa))
+  implicit class ProgOps[A](pa: RecProg[A]) {
+    def op: RecProg[A] = Free.liftF(Coproduct.left[M](MNode(pa)): RecNode[A])
+    def opAp: RecApProg[A] = FreeAp.lift(Coproduct.left[M](MNode(pa)): RecNode[A])
 
-    def runWith[T[_]: Applicative: Monad](a: (M ~> T), m: (M ~>T)): T[A] =
-      fa.op.runWith(a, m)
-    def runWith[T[_]: Applicative: Monad](i: (M ~> T)): T[A] = runWith(i, i)
+    def runWith[G[_]](fg: (M ~> G))(implicit m: Monad[G], ap: Applicative[G]): G[A] =
+      pa.foldMap(recInterp(fg)(m, ap).interp)
   }
 
-  implicit def mkOpM[F[_], A](fa: F[A])(implicit i: Inject[F, M]): Free[M, A] = fa.op
-  implicit def mkFOp[A](fa: Free[M, A]): Composed[A] = fa.op
-  implicit def mkFAOp[A](fa: FreeAp[Free[M, ?], A]): Composed[A] = fa.op
+  implicit class ApProgOps[A](apa: RecApProg[A]) {
+    def op: RecProg[A] = Free.liftF(Coproduct.left[M](ANode(apa)): RecNode[A])
+    def opAp: RecApProg[A] = FreeAp.lift(Coproduct.left[M](ANode(apa)): RecNode[A])
+  }
+
+  implicit class ComposeNodeOps[A](nfa: ComposeNode[A]) {
+    def op: RecProg[A] = Free.liftF(Coproduct.left[M](nfa): RecNode[A])
+    def opAp: RecApProg[A] = FreeAp.lift(Coproduct.left[M](nfa): RecNode[A])
+
+    def runWith[G[_]](fg: (M ~> G))(implicit m: Monad[G], ap: Applicative[G]): G[A] =
+      nfa.op.foldMap(recInterp(fg)(m, ap).interp)
+  }
+
+  implicit class FreeApOps[A](p: FreeAp[M, A]) {
+    def op: Composed[A] =
+      p.foldMap(new (M ~> Composed) { def apply[B](m: M[B]) = m.op })
+    def opAp: RecApProg[A] =
+      p.foldMap(new (M ~> RecApProg) { def apply[B](m: M[B]) = m.opAp })
+  }
+
+  implicit class ComposeFreeOps[A](p: Free[M, A]) {
+    def op: Composed[A] =
+      p.foldMap(new (M ~> Composed) { def apply[B](m: M[B]) = m.op })
+  }
+
+  implicit def f2fnf[F[_], A](fa: F[A])(implicit i: Inject[F, M]): Composed[A] = fa.op
+  implicit def m2mnm[A](ma: M[A]): Composed[A] = ma.op
+  implicit def nf2fnf[A](nfa: ComposeNode[A]): Composed[A] = nfa.op
 
 }
 

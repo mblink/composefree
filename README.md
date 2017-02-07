@@ -88,7 +88,7 @@ val prog: compose.Composed[Unit] = {
     _ <- print(s)
   } yield ()
 }
-// prog: compose.Composed[Unit] = Suspend(Coproduct(\/-(Gosub(Suspend(Coproduct(\/-(pure(Hello world!)))),<function1>))))
+// prog: compose.Composed[Unit] = Gosub(Suspend(Coproduct(\/-(Coproduct(\/-(pure(Hello world!)))))),<function1>)
 
 prog.runWith(interp)
 // Hello world!
@@ -119,11 +119,11 @@ import Program._
 // import Program._
 
 val prog = for {
-  s <- PureComposite.makeTuple("Hello", "World!").as[Program]
+  s <- PureComposite.makeTuple("Hello", "World!").as[Program].op
   _ <- print(s._1)
   _ <- print(s._2)
 } yield ()
-// prog: scalaz.Free[Program.Program,Unit] = Gosub(Gosub(Suspend(Coproduct(\/-(pure(Hello)))),<function1>),<function1>)
+// prog: scalaz.Free[compose.RecNode,Unit] = Gosub(Gosub(Suspend(Coproduct(\/-(Coproduct(\/-(pure(Hello)))))),<function1>),<function1>)
 
 prog.runWith(interp)
 // Hello
