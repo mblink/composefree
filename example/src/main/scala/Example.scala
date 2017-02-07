@@ -16,7 +16,7 @@ import scalaz.syntax.traverse._
 object Example {
   import examplecompose._
 
-  def stall[A](a: A): FM[A] =
+  def stall[A](a: A): Composed[A] =
     for {
       _ <- pure(println("stalling")).as[PureOp]
       _ <- pure { Thread.sleep(3500L) }.as[PureOp]
@@ -27,10 +27,10 @@ object Example {
 
   val prog: Composed[Int] =
     for {
-      init <- pure(2).as[PureOp].apM
-      _ <- set(init).apM
+      init <- pure(2).as[PureOp]
+      _ <- set(init)
       _ <- update(_ + 1).as[Program].op
-      x <- ((stall(2).opAp |@| stall(1).opAp)(_ + _): FA[Int]).op
+      x <- ((stall(2).opAp |@| stall(1).opAp)(_ + _)).op
       t <- stall(3)
       a <- add(t)
       _ <- Option("foo").traverseU(print(_).op)

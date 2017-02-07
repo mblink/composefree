@@ -113,7 +113,7 @@ import compose._
 import Program._
 
 val prog = for {
-  s <- PureComposite.makeTuple("Hello", "World!").as[Program]
+  s <- PureComposite.makeTuple("Hello", "World!").as[Program].op
   _ <- print(s._1)
   _ <- print(s._2)
 } yield ()
