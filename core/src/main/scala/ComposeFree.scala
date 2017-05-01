@@ -27,10 +27,12 @@ trait ComposeOps extends LPSyntax {
     type From[A] = Coproduct[F, G, A]
     def or[I[_]](i: I ~> H) = new CNat[From, I, H](this, i)
     def apply[A](fa: From[A]): H[A] = fa.run.fold(f(_), g(_))
+    def |:[I[_]](i: I ~> H) = new CNat[I, From, H](i, this)
   }
 
   implicit class NTOps[F[_], G[_]](nt: F ~> G) {
     def or[H[_]](ont: H ~> G) = new CNat[F, H, G](nt, ont)
+    def |:[H[_]](ont: H ~> G) = new CNat[H, F, G](ont, nt)
   }
 
   implicit class ComposeFreeApOps[G[_], A](p: FreeAp[G, A]) {

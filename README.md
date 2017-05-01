@@ -72,7 +72,7 @@ interpreters.
 ```scala
 import composefree.syntax._
 
-val interp = RunConsole.or(RunPure)
+val interp = RunConsole |: RunPure
 ```
 
 And finally we can define a program and execute it.
