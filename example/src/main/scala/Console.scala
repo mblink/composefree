@@ -1,7 +1,7 @@
 package composefree.example
 
 import scala.concurrent.Future
-import scalaz.{Free, ~>}
+import scalaz.~>
 
 object console {
   sealed trait Console[A]
