@@ -4,7 +4,6 @@ import composefree.example.console._
 import composefree.example.dsl._
 import composefree.example.numbers._
 import composefree.puredsl._
-import composefree.syntax._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.Await

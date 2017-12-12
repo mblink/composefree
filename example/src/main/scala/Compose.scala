@@ -5,9 +5,8 @@ import composefree.puredsl._
 import composefree.example.console._
 import composefree.example.dsl._
 import composefree.example.numbers._
-import composefree.syntax._
 import scala.concurrent.Future
-import scalaz.{Coproduct, Free, ~>}
+import scalaz.{Coproduct, ~>}
 
 object dsl {
   type PN[A] = Coproduct[PureOp, Numbers, A]
