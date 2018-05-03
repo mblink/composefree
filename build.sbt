@@ -18,14 +18,15 @@ lazy val commonSettings = Seq(
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",
     "-Xfuture"),
-  bintrayReleaseOnPublish in ThisBuild := false)
+  bintrayReleaseOnPublish in ThisBuild := false,
+  libraryDependencies ++= Seq(
+    "com.chuusai" %% "shapeless" % "2.3.3",
+    "org.scalaz" %% "scalaz-core" % "7.2.17"))
 
 lazy val core = project.in(file("core")).
   settings(commonSettings: _*).
   settings(
     name := "composefree",
-    libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-core" % "7.2.17"),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
     tutTargetDirectory := file("."),
     bintrayOrganization := Some("bondlink"),

@@ -1,7 +1,7 @@
 package composefree.example
 
+// import composefree.example.consoleOnlyCompose._
 import composefree.example.console._
-import composefree.example.dsl._
 import composefree.example.numbers._
 import composefree.puredsl._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,8 +27,10 @@ object Example {
   val prog: Composed[Int] =
     for {
       init <- pure(2).as[PureOp]
+      // The goal is to make it possible to interpret this sub Composed type into the higher level Composed type
+      // _ <- printFoobar()
       _ <- set(init)
-      _ <- update(_ + 1).as[Program].op
+      _ <- update(_ + 1)
       x <- ((stall(2).opAp |@| stall(1).opAp)(_ + _)).op
       t <- stall(3)
       a <- add(t)

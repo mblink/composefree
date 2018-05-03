@@ -1,8 +1,8 @@
 package composefree.example
 
-import composefree.syntax.lift._
+import composefree.example.examplecompose._
 import scala.concurrent.Future
-import scalaz.{Free, ~>}
+import scalaz.~>
 
 object numbers {
   sealed trait Numbers[A]
@@ -11,23 +11,20 @@ object numbers {
   case class add(i: Int) extends Numbers[Int]
   case class minus(i: Int) extends Numbers[Int]
 
-  def update(fn: Int => Int): Free[Numbers, Int] =
+  def update(fn: Int => Int): Composed[Int] =
     for {
       c <- get()
       r = fn(c)
       _ <- set(r)
     } yield r
 
-  object RunNumbers {
-
-    def apply() = new (Numbers ~> Future) {
-      var x = 0
-      def apply[A](n: Numbers[A]) = n match {
-        case set(i) => Future.successful(x = i)
-        case get() => Future.successful(x)
-        case add(i) => Future.successful({ x = x+i; x })
-        case minus(i) => Future.successful({ x = x-i; x })
-      }
+  object RunNumbers extends (Numbers ~> Future) {
+    var x = 0
+    def apply[A](n: Numbers[A]) = n match {
+      case set(i) => Future.successful(x = i)
+      case get() => Future.successful(x)
+      case add(i) => Future.successful({ x = x+i; x })
+      case minus(i) => Future.successful({ x = x-i; x })
     }
   }
 }
