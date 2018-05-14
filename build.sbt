@@ -17,22 +17,25 @@ lazy val commonSettings = Seq(
     "-Ywarn-infer-any",
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",
-    "-Xfuture"),
-  bintrayReleaseOnPublish in ThisBuild := false)
+    "-Xfuture",
+    "-P:splain:all"),
+  bintrayReleaseOnPublish in ThisBuild := false,
+  addCompilerPlugin("io.tryp" % "splain" % "0.2.9" cross CrossVersion.patch))
 
 lazy val core = project.in(file("core")).
   settings(commonSettings: _*).
   settings(
     name := "composefree",
-    libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-core" % "7.2.17"),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
     tutTargetDirectory := file("."),
     bintrayOrganization := Some("bondlink"),
     bintrayReleaseOnPublish in ThisBuild := false,
     bintrayRepository := "composefree",
     licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))).
-  enablePlugins(TutPlugin)
+  enablePlugins(TutPlugin).
+  dependsOn(scalazCore)
+
+lazy val scalazCore = ProjectRef(uri("git://github.com/mrdziuban/scalaz.git#expose-inject-7.2.22"), "coreJVM")
 
 lazy val example = project.in(file("example")).
   dependsOn(core)

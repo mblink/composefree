@@ -10,10 +10,12 @@ import scalaz.{Coproduct, ~>}
 
 object dsl {
   type PN[A] = Coproduct[PureOp, Numbers, A]
-  type Program[A] = Coproduct[Console, PN, A]
+  type Command[A] = Coproduct[Console, PN, A]
+
+  type ConsolePure[A] = Coproduct[Console, PureOp, A]
 }
 
-object examplecompose extends ComposeFree[Program] {
+object examplecompose extends ComposeFree[Command] {
 
   object RunPure extends (PureOp ~> Future) {
     def apply[A](p: PureOp[A]) = p match {
@@ -21,7 +23,7 @@ object examplecompose extends ComposeFree[Program] {
     }
   }
 
-  val interp: Program ~> Future =
-    RunConsole.or(RunPure.or(RunNumbers()): (PN ~> Future))
+  val interp: Command ~> Future = RunConsole |: RunPure |: RunNumbers()
 }
 
+object consolePureCompose extends ComposeFree[ConsolePure]

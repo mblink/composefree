@@ -28,7 +28,8 @@ object Example {
     for {
       init <- pure(2).as[PureOp]
       _ <- set(init)
-      _ <- update(_ + 1).as[Program].op
+      _ <- printOnlyProg().op
+      _ <- update(_ + 1).as[Command].op
       x <- ((stall(2).opAp |@| stall(1).opAp)(_ + _)).op
       t <- stall(3)
       a <- add(t)

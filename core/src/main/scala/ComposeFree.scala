@@ -81,20 +81,47 @@ trait ComposeFree[M[_]] extends ComposeOps {
   case class MNode[A](run: Free[RecNode, A]) extends ComposeNode[A]
   case class ANode[A](run: FreeAp[RecNode, A]) extends ComposeNode[A]
 
-
-  def recInterp[G[_]](fg: (M ~> G))(implicit m: Monad[G], ap: Applicative[G])=
-    new (ComposeNode ~> G) { self =>
-      lazy val interp: (RecNode ~> G) =
-        new (RecNode ~> G) {
-          def apply[A](cp: RecNode[A]) =
-            cp.fold(self, fg)
-        }
-
-      def apply[A](nf: ComposeNode[A]) = nf match {
-        case MNode(mn) => mn.foldMap(interp)(m)
-        case ANode(apn) => apn.foldMap(interp)(ap)
-      }
+  implicit def cop2CopInj[C[_], F[_], G[_]](implicit injF: Inject[F, C], injG: Inject[G, C]): Inject[Coproduct[F, G, ?], C] =
+    new Inject[Coproduct[F, G, ?], C] {
+      def inj[A](in: Coproduct[F, G, A]): C[A] = in.fold(injF, injG)
+      def prj[A](c: C[A]): Option[Coproduct[F, G, A]] =
+        injF.unapply(c).map(Coproduct.left[G](_))
+          .orElse(injG.unapply(c).map(Coproduct.right[F](_)))
     }
+
+  type OtherRN[M2[_], A] = ComposeFree[M2]#RecNode[A]
+
+  def otherRNToThis[M2[_]](implicit i: Inject[M2, M]): (OtherRN[M2, ?] ~> RecNode) = new (OtherRN[M2, ?] ~> RecNode) {
+    def apply[B](rn: OtherRN[M2, B]): RecNode[B] = convertRecNode[M2, B](rn)
+  }
+
+  implicit def convertComposeNode[M2[_], A](cn: ComposeFree[M2]#ComposeNode[A])(implicit i: Inject[M2, M]): ComposeNode[A] =
+    cn match {
+      case mn: ComposeFree[M2 @unchecked]#MNode[A @unchecked] => MNode[A](convertComposed(mn.run))
+      case an: ComposeFree[M2 @unchecked]#ANode[A @unchecked] => ANode[A](an.run.hoist(otherRNToThis[M2]))
+    }
+
+  implicit def convertRecNode[M2[_], A](rn: OtherRN[M2, A])(implicit i: Inject[M2, M]): RecNode[A] =
+    rn.run.fold(
+      cn => Coproduct.left[M](convertComposeNode[M2, A](cn)),
+      m2 => Coproduct.right[ComposeNode](i.inj(m2)))
+
+  implicit class SubComposedOps[M2[_], A](c: ComposeFree[M2]#Composed[A])(implicit i: Inject[M2, M]) {
+    def op: Composed[A] = c.mapSuspension(otherRNToThis[M2])
+  }
+
+  implicit def convertComposed[M2[_], A](c: ComposeFree[M2]#Composed[A])(implicit i: Inject[M2, M]): Composed[A] = c.op
+
+  def recInterp[G[_]](fg: (M ~> G))(implicit m: Monad[G], ap: Applicative[G]) = new (ComposeNode ~> G) { self =>
+    lazy val interp: (RecNode ~> G) = new (RecNode ~> G) {
+      def apply[A](cp: RecNode[A]) = cp.fold(self, fg)
+    }
+
+    def apply[A](nf: ComposeNode[A]) = nf match {
+      case MNode(mn) => mn.foldMap(interp)(m)
+      case ANode(apn) => apn.foldMap(interp)(ap)
+    }
+  }
 
   implicit class FOps[F[_], A](fa: F[A])(implicit i: Inject[F, M]) {
     def op: RecProg[A] =
