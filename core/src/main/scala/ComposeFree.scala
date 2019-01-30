@@ -6,7 +6,6 @@ import cats.evidence.As
 import cats.free.{Free, FreeApplicative}
 import scala.language.higherKinds
 import scala.language.implicitConversions
-import scala.language.reflectiveCalls
 
 object puredsl {
   sealed trait PureOp[A]
@@ -80,14 +79,15 @@ trait ComposeFree[M[_]] extends ComposeOps {
   case class MNode[A](run: Free[RecNode, A]) extends ComposeNode[A]
   case class ANode[A](run: FreeApplicative[RecNode, A]) extends ComposeNode[A]
 
+  abstract class RecInterp[G[_]] extends (ComposeNode ~> G) {
+    def interp: (RecNode ~> G)
+  }
 
-  def recInterp[G[_]](fg: (M ~> G))(implicit M: Monad[G]) =
-    new (ComposeNode ~> G) { self =>
-      lazy val interp: (RecNode ~> G) =
-        new (RecNode ~> G) {
-          def apply[A](cp: RecNode[A]) =
-            cp.fold(self, fg)
-        }
+  def recInterp[G[_]](fg: (M ~> G))(implicit M: Monad[G]): RecInterp[G] =
+    new RecInterp[G] { self =>
+      lazy val interp: (RecNode ~> G) = new (RecNode ~> G) {
+        def apply[A](cp: RecNode[A]) = cp.fold(self, fg)
+      }
 
       def apply[A](nf: ComposeNode[A]) = nf match {
         case MNode(mn) => mn.foldMap(interp)
