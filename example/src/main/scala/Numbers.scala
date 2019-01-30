@@ -1,8 +1,9 @@
 package composefree.example
 
+import cats.~>
+import cats.free.Free
 import composefree.syntax.lift._
 import scala.concurrent.Future
-import scalaz.{Free, ~>}
 
 object numbers {
   sealed trait Numbers[A]

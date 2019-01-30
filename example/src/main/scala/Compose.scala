@@ -1,16 +1,17 @@
 package composefree.example
 
+import cats.~>
+import cats.data.EitherK
 import composefree.ComposeFree
 import composefree.puredsl._
 import composefree.example.console._
 import composefree.example.dsl._
 import composefree.example.numbers._
 import scala.concurrent.Future
-import scalaz.{Coproduct, ~>}
 
 object dsl {
-  type PN[A] = Coproduct[PureOp, Numbers, A]
-  type Program[A] = Coproduct[Console, PN, A]
+  type PN[A] = EitherK[PureOp, Numbers, A]
+  type Program[A] = EitherK[Console, PN, A]
 }
 
 object examplecompose extends ComposeFree[Program] {

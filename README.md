@@ -10,7 +10,7 @@ To use it, include in build.sbt
 ```scala
 resolvers += Resolver.bintrayRepo("bondlink", "composefree")
 
-libraryDependencies += "bondlink" %% "composefree" % "1.1.0"
+libraryDependencies += "bondlink" %% "composefree" % "2.0.0"
 ```
 
 Basic use is a pared down version of the manual process, with the following high level steps:
@@ -27,8 +27,7 @@ First we define an ADT for our Console operations, and pattern match it
 in a NaturalTransformation to an effectful monad.
 
 ```scala
-import scalaz.Id.Id
-import scalaz.~>
+import cats.{~>, Id}
 
 sealed trait ConsoleOps[A]
 case class print(s: String) extends ConsoleOps[Unit]
@@ -56,11 +55,11 @@ Then we can define the Coproduct type for our application, and obtain our Compos
 instance.
 
 ```scala
+import cats.data.EitherK
 import composefree.ComposeFree
-import scalaz.Coproduct
 
 object Program {
-  type Program[A] = Coproduct[ConsoleOps, PureOp, A]
+  type Program[A] = EitherK[ConsoleOps, PureOp, A]
 }
 
 object compose extends ComposeFree[Program.Program]
@@ -88,11 +87,11 @@ val prog: compose.Composed[Unit] = {
     _ <- print(s)
   } yield ()
 }
-// prog: compose.Composed[Unit] = Gosub(Suspend(Coproduct(\/-(Coproduct(\/-(pure(Hello world!)))))),<function1>)
+// prog: compose.Composed[Unit] = Free(...)
 
 prog.runWith(interp)
 // Hello world!
-// res6: scalaz.Id.Id[Unit] = ()
+// res6: cats.Id[Unit] = ()
 ```
 
 Composite commands can be defined in individual DSLs and mixed into
@@ -102,7 +101,7 @@ larger programs as follows.
 object PureComposite {
   import compose.lift._
   import composefree.syntax._
-  import scalaz.Free
+  import cats.free.Free
 
   def makeTuple(s1: String, s2: String): Free[PureOp, (String, String)] =
     for {
@@ -123,10 +122,10 @@ val prog = for {
   _ <- print(s._1)
   _ <- print(s._2)
 } yield ()
-// prog: scalaz.Free[compose.RecNode,Unit] = Gosub(Gosub(Suspend(Coproduct(\/-(Coproduct(\/-(pure(Hello)))))),<function1>),<function1>)
+// prog: cats.free.Free[compose.RecNode,Unit] = Free(...)
 
 prog.runWith(interp)
 // Hello
 // World!
-// res7: scalaz.Id.Id[Unit] = ()
+// res7: cats.Id[Unit] = ()
 ```
