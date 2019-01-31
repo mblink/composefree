@@ -20,8 +20,7 @@ trait LPSyntax {
 
 trait ComposeOps extends LPSyntax {
 
-  class CNat[F[_], G[_], H[_]](f: F ~> H, g: G ~> H)
-  extends (EitherK[F, G, ?] ~> H) {
+  class CNat[F[_], G[_], H[_]](f: F ~> H, g: G ~> H) extends (EitherK[F, G, ?] ~> H) {
     type From[A] = EitherK[F, G, A]
     override def or[I[_]](i: I ~> H) = new CNat[From, I, H](this, i)
     def apply[A](fa: From[A]): H[A] = fa.run.fold(f(_), g(_))
