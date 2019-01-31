@@ -1,11 +1,11 @@
-name := """composefree"""
-
-scalaVersion in ThisBuild := "2.12.4"
-crossScalaVersions in ThisBuild := Seq("2.11.11", "2.12.4")
+lazy val scala212 = "2.12.8"
+lazy val scala211 = "2.11.12"
 
 lazy val commonSettings = Seq(
-  version := "1.1.1",
+  version := "2.0.0",
   organization := "bondlink",
+  scalaVersion := scala212,
+  crossScalaVersions := Seq(scala211, scala212),
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding", "UTF-8", // yes, this is 2 args
@@ -13,30 +13,46 @@ lazy val commonSettings = Seq(
     "-unchecked",
     "-Xfatal-warnings",
     "-Xlint",
+    "-Ypartial-unification",
     "-Yno-adapted-args",
     "-Ywarn-infer-any",
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",
-    "-Xfuture"),
-  bintrayReleaseOnPublish in ThisBuild := false)
+    "-Xfuture"
+  ),
+  scalacOptions in (Compile, console) --= Seq("-Xlint", "-Xfatal-warnings"),
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.9"),
+  bintrayReleaseOnPublish in ThisBuild := false,
+  skip in publish := true
+)
 
-lazy val core = project.in(file("core")).
-  settings(commonSettings: _*).
-  settings(
+lazy val catsVersion = "1.5.0"
+
+lazy val publishSettings = Seq(
+  skip in publish := false,
+  bintrayOrganization := Some("bondlink"),
+  bintrayRepository := "composefree",
+  licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
+)
+
+lazy val core = project.in(file("core"))
+  .settings(commonSettings ++ publishSettings ++ Seq(
     name := "composefree",
     libraryDependencies ++= Seq(
-      "org.scalaz" %% "scalaz-core" % "7.2.17"),
-    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
-    tutTargetDirectory := file("."),
-    bintrayOrganization := Some("bondlink"),
-    bintrayReleaseOnPublish in ThisBuild := false,
-    bintrayRepository := "composefree",
-    licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))).
-  enablePlugins(TutPlugin)
+      "org.typelevel" %% "cats-core" % catsVersion,
+      "org.typelevel" %% "cats-free" % catsVersion
+    )
+  ))
 
-lazy val example = project.in(file("example")).
-  dependsOn(core)
-  .settings(commonSettings: _*)
-  .settings(
-    name := "composefree-example",
-    publish := {})
+lazy val example = project.in(file("example"))
+  .dependsOn(core)
+  .settings(commonSettings ++ Seq(name := "composefree-example"))
+
+lazy val root = project.in(file("."))
+  .settings(commonSettings ++ Seq(
+    tutTargetDirectory := file("."),
+    scalacOptions in Tut := (scalacOptions in (Compile, console)).value
+  ))
+  .dependsOn(core)
+  .aggregate(core, example)
+  .enablePlugins(TutPlugin)

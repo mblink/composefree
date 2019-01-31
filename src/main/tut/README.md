@@ -2,7 +2,7 @@
 
 ComposeFree is a small lib inspired by Runars
 [Composable Application Architecture](http://functionaltalks.org/2014/11/23/runar-oli-bjarnason-free-monad/)
-which minimizes the boilerplate required to build an application based on a Coproduct of
+which minimizes the boilerplate required to build an application based on a coproduct of
 Free DSLs.
 
 To use it, include in build.sbt
@@ -10,13 +10,13 @@ To use it, include in build.sbt
 ```scala
 resolvers += Resolver.bintrayRepo("bondlink", "composefree")
 
-libraryDependencies += "bondlink" %% "composefree" % "1.1.0"
+libraryDependencies += "bondlink" %% "composefree" % "2.0.0"
 ```
 
 Basic use is a pared down version of the manual process, with the following high level steps:
 
 * Define DSLs as sealed families of case classes
-* Define interpreters for DSLs as NaturalTransformations
+* Define interpreters for DSLs as natural transformations
 * Define the application Coproduct type for your composed DSLs
 * Create an instance of ComposeFree[YourApplicationType] and import it
 
@@ -24,11 +24,10 @@ For example, let's say we wanted to combine a simple Console DSL with the Pure D
 provided in the ComposeFree lib.
 
 First we define an ADT for our Console operations, and pattern match it
-in a NaturalTransformation to an effectful monad.
+in a natural transformation to an effectful monad.
 
 ```tut:book:silent
-import scalaz.Id.Id
-import scalaz.~>
+import cats.{~>, Id}
 
 sealed trait ConsoleOps[A]
 case class print(s: String) extends ConsoleOps[Unit]
@@ -40,7 +39,7 @@ object RunConsole extends (ConsoleOps ~> Id) {
 }
 ```
 
-Now we need a NaturalTransformation for the Pure dsl.
+Now we need a natural transformation for the Pure dsl.
 
 ```tut:book:silent
 import composefree.puredsl._
@@ -52,15 +51,15 @@ object RunPure extends (PureOp ~> Id) {
 }
 ```
 
-Then we can define the Coproduct type for our application, and obtain our ComposeFree
+Then we can define the coproduct type for our application, and obtain our ComposeFree
 instance.
 
 ```tut:book:silent
+import cats.data.EitherK
 import composefree.ComposeFree
-import scalaz.Coproduct
 
 object Program {
-  type Program[A] = Coproduct[ConsoleOps, PureOp, A]
+  type Program[A] = EitherK[ConsoleOps, PureOp, A]
 }
 
 object compose extends ComposeFree[Program.Program]
@@ -96,11 +95,10 @@ Composite commands can be defined in individual DSLs and mixed into
 larger programs as follows.
 
 ```tut:book
-
 object PureComposite {
   import compose.lift._
   import composefree.syntax._
-  import scalaz.Free
+  import cats.free.Free
 
   def makeTuple(s1: String, s2: String): Free[PureOp, (String, String)] =
     for {
