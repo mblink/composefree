@@ -46,12 +46,16 @@ lazy val core = project.in(file("core"))
 
 lazy val example = project.in(file("example"))
   .dependsOn(core)
-  .settings(commonSettings ++ Seq(name := "composefree-example"))
+  .settings(commonSettings ++ Seq(
+    name := "composefree-example",
+    bintrayRelease := {}
+  ))
 
 lazy val root = project.in(file("."))
   .settings(commonSettings ++ Seq(
     tutTargetDirectory := file("."),
-    scalacOptions in Tut := (scalacOptions in (Compile, console)).value
+    scalacOptions in Tut := (scalacOptions in (Compile, console)).value,
+    bintrayRelease := {}
   ))
   .dependsOn(core)
   .aggregate(core, example)
