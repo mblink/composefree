@@ -4,8 +4,6 @@ import cats.{~>, Applicative, InjectK, Monad}
 import cats.data.EitherK
 import cats.evidence.As
 import cats.free.{Free, FreeApplicative}
-import scala.language.higherKinds
-import scala.language.implicitConversions
 
 object puredsl {
   sealed trait PureOp[A]
