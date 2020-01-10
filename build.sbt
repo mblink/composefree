@@ -71,6 +71,7 @@ lazy val commonSettings = Seq(
 )
 
 lazy val catsVersion = "2.1.0"
+lazy val silencerVersion = "1.4.4"
 
 lazy val publishSettings = Seq(
   skip in publish := false,
@@ -82,7 +83,12 @@ lazy val publishSettings = Seq(
 lazy val core = project.in(file("core"))
   .settings(commonSettings ++ publishSettings ++ Seq(
     name := "composefree",
+    addCompilerPlugin("com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full),
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
     libraryDependencies ++= Seq(
+      "com.github.ghik" % "silencer-lib" % silencerVersion % Provided cross CrossVersion.full,
+      "com.projectseptember" %% "freek" % "0.7.0-LOCAL1",
+      "io.estatico" %% "newtype" % "0.4.3",
       "org.typelevel" %% "cats-core" % catsVersion,
       "org.typelevel" %% "cats-free" % catsVersion
     )
