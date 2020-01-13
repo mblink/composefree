@@ -5,7 +5,15 @@ import io.estatico.newtype.macros.newtype
 import io.estatico.newtype.ops._
 
 package object composefree {
-  type ComposeNode[F[_], A] = Either[Free[F, A], FreeApplicative[F, A]]
+  @newtype class ComposeNode[F[_], A](val run: Either[Free[F, A], FreeApplicative[F, A]])
+
+  object ComposeNode {
+    def apply[F[_], A](fa: Free[F, A]): ComposeNode[F, A] =
+      fa.asLeft[FreeApplicative[F, A]].coerce
+
+    def apply[F[_], A](fa: FreeApplicative[F, A]): ComposeNode[F, A] =
+      fa.asRight[Free[F, A]].coerce
+  }
 
   @newtype class RecNode[F[_] <: CopK[_], A](val run: Either[ComposeNode[RecNode[F, ?], A], F[A]])
 
@@ -14,10 +22,10 @@ package object composefree {
       fa.asRight[ComposeNode[RecNode[F, ?], A]].coerce
 
     def apply[F[_] <: CopK[_], A](free: Free[RecNode[F, ?], A]): RecNode[F, A] =
-      free.asLeft[FreeApplicative[RecNode[F, ?], A]].asLeft[F[A]].coerce
+      ComposeNode(free).asLeft[F[A]].coerce
 
     def apply[F[_] <: CopK[_], A](freeAp: FreeApplicative[RecNode[F, ?], A]): RecNode[F, A] =
-      freeAp.asRight[Free[RecNode[F, ?], A]].asLeft[F[A]].coerce
+      ComposeNode(freeAp).asLeft[F[A]].coerce
 
     def apply[F[_] <: CopK[_], A](cn: ComposeNode[RecNode[F, ?], A]): RecNode[F, A] =
       cn.asLeft[F[A]].coerce

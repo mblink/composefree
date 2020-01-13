@@ -41,7 +41,7 @@ val scala212_213_opts = Seq(
 )
 
 lazy val commonSettings = Seq(
-  version := "3.0.0",
+  version := "3.0.1-LOCAL1",
   organization := "bondlink",
   scalaVersion := scala212,
   crossScalaVersions := Seq(scala212, scala213),
@@ -101,6 +101,14 @@ lazy val example = project.in(file("example"))
     bintrayRelease := {}
   ))
 
+lazy val bench = project.in(file("bench"))
+  .dependsOn(core, example)
+  .settings(commonSettings ++ Seq(
+    name := "composefree-bench",
+    bintrayRelease := {}
+  ))
+  .enablePlugins(JmhPlugin)
+
 lazy val root = project.in(file("."))
   .settings(commonSettings ++ Seq(
     crossScalaVersions := Seq(scala212),
@@ -109,5 +117,5 @@ lazy val root = project.in(file("."))
     bintrayRelease := {}
   ))
   .dependsOn(core)
-  .aggregate(core, example)
+  .aggregate(core, example, bench)
   .enablePlugins(TutPlugin)

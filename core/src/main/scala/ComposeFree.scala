@@ -5,6 +5,11 @@ import cats.free.{Free, FreeApplicative}
 import cats.evidence.As
 import freek._
 
+object puredsl {
+  sealed trait PureOp[A]
+  case class pure[A](a: A) extends PureOp[A]
+}
+
 trait ComposeOps {
   implicit class MAsOps[M[_], A](m: M[A]) {
     def as[G[_]](implicit ev: As[M[A], G[A]]): G[A] = ev(m)
@@ -39,9 +44,9 @@ sealed abstract class ComposeFreeLP1[D <: DSL, M[_] <: CopK[_]](val M: DSL.Make[
     Lambda[FreeApplicative[RecNode[F, ?], ?] ~> Free[RecNode[F, ?], ?]](f => Free.liftF(RecNode(f)))
 
   protected def otherCNToThis[F[_] <: CopK[_]](implicit s: SubCop[F, M]): ComposeNode[RecNode[F, ?], ?] ~> ComposeNode[RecNode[M, ?], ?] =
-    Lambda[ComposeNode[RecNode[F, ?], ?] ~> ComposeNode[RecNode[M, ?], ?]](_.fold(
-      m => Left(m.mapK(otherRNToThis[F])),
-      a => Right(a.compile(otherRNToThis[F]))))
+    Lambda[ComposeNode[RecNode[F, ?], ?] ~> ComposeNode[RecNode[M, ?], ?]](_.run.fold(
+      m => ComposeNode(m.mapK(otherRNToThis[F])),
+      a => ComposeNode(a.compile(otherRNToThis[F]))))
 
   protected def otherRNToThis[F[_] <: CopK[_]](implicit s: SubCop[F, M]): RecNode[F, ?] ~> RecNode[M, ?] =
     Lambda[RecNode[F, ?] ~> RecNode[M, ?]](_.run.fold(
@@ -61,7 +66,7 @@ extends ComposeFreeLP1[D, M](M) {
         def apply[A](cp: RecNode[M, A]) = cp.run.fold(self(_), fg(_))
       }
 
-      def apply[A](cn: ComposeNode[RecNode[M, ?], A]) = cn.fold(_.foldMap(interp), _.foldMap(interp))
+      def apply[A](cn: ComposeNode[RecNode[M, ?], A]) = cn.run.fold(_.foldMap(interp), _.foldMap(interp))
     }
 
   implicit class FOps[F[_], A](fa: F[A])(implicit s: SubCop[In1[F, ?], M]) {
@@ -105,8 +110,8 @@ extends ComposeFreeLP1[D, M](M) {
   }
 
   implicit class RecProgOps[A](pa: RecProg[A]) {
-    def op: RecProg[A] = Free.liftF(RecNode(pa))
-    def opAp: RecApProg[A] = FreeApplicative.lift(RecNode(pa))
+    def op: RecProg[A] = pa
+    def opAp: RecApProg[A] = freeToFreeAp(pa)
 
     def runWith[G[_]: Monad](fg: (M ~> G)): G[A] =
       pa.foldMap(recInterp(fg).interp)
@@ -116,8 +121,8 @@ extends ComposeFreeLP1[D, M](M) {
   }
 
   implicit class RecApProgOps[A](apa: RecApProg[A]) {
-    def op: RecProg[A] = Free.liftF(RecNode(apa))
-    def opAp: RecApProg[A] = FreeApplicative.lift(RecNode(apa))
+    def op: RecProg[A] = freeApToFree(apa)
+    def opAp: RecApProg[A] = apa
   }
 
   implicit class ComposeNodeOps[A](nfa: ComposeNode[RecNode[M, ?], A]) {
