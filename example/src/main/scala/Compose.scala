@@ -13,7 +13,7 @@ object dsl {
   val Program = DSL.Make[Program]
 }
 
-object examplecompose extends ComposeFree(dsl.Program) {
+object examplecompose extends ComposeFree[dsl.Program, dsl.Program.Cop] {
   object RunPure extends (PureOp ~> Future) {
     def apply[A](p: PureOp[A]) = p match {
       case pure(p) => Future.successful(p)

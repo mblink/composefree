@@ -87,7 +87,7 @@ lazy val core = project.in(file("core"))
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
     libraryDependencies ++= Seq(
       "com.github.ghik" % "silencer-lib" % silencerVersion % Provided cross CrossVersion.full,
-      "com.projectseptember" %% "freek" % "0.7.0-LOCAL1",
+      "com.projectseptember" %% "freek" % "0.7.0-LOCAL2",
       "io.estatico" %% "newtype" % "0.4.3",
       "org.typelevel" %% "cats-core" % catsVersion,
       "org.typelevel" %% "cats-free" % catsVersion
