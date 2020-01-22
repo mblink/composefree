@@ -1,70 +1,21 @@
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
 lazy val scala212 = "2.12.10"
 lazy val scala213 = "2.13.1"
 
-val scala212_opts = Seq(
-  "-Xfuture",
-  "-Xlint:by-name-right-associative",
-  "-Xlint:unsound-match",
-  "-Yno-adapted-args",
-  "-Ypartial-unification",
-  "-Ywarn-inaccessible",
-  "-Ywarn-infer-any",
-  "-Ywarn-nullary-override",
-  "-Ywarn-nullary-unit"
-)
-
-val scala212_213_opts = Seq(
-  "-Xlint:adapted-args",
-  "-Xlint:constant",
-  "-Xlint:delayedinit-select",
-  "-Xlint:doc-detached",
-  "-Xlint:inaccessible",
-  "-Xlint:infer-any",
-  "-Xlint:missing-interpolator",
-  "-Xlint:nullary-override",
-  "-Xlint:nullary-unit",
-  "-Xlint:option-implicit",
-  "-Xlint:package-object-classes",
-  "-Xlint:poly-implicit-overload",
-  "-Xlint:private-shadow",
-  "-Xlint:stars-align",
-  "-Xlint:type-parameter-shadow",
-  "-Ywarn-unused:implicits",
-  "-Ywarn-unused:imports",
-  "-Ywarn-unused:locals",
-  "-Ywarn-unused:params",
-  "-Ywarn-unused:patvars",
-  "-Ywarn-unused:privates",
-  "-Ywarn-extra-implicit",
-  "-Ycache-plugin-class-loader:last-modified",
-  "-Ycache-macro-class-loader:last-modified"
-)
+def foldV[A](version: String)(twlv: => A, thrtn: => A): A = (CrossVersion.partialVersion(version) match {
+  case Some((2, 12)) => twlv
+  case Some((2, 13)) => thrtn
+})
 
 lazy val commonSettings = Seq(
   version := "3.0.1-LOCAL1",
   organization := "bondlink",
   scalaVersion := scala212,
   crossScalaVersions := Seq(scala212, scala213),
-  scalacOptions ++= Seq(
-    "-deprecation",
-    "-encoding", "UTF-8",
-    "-explaintypes",
-    "-feature",
-    "-language:higherKinds",
-    "-language:implicitConversions",
-    "-unchecked",
-    "-Xcheckinit",
-    "-Xfatal-warnings",
-    "-Yrangepos",
-    "-Ywarn-dead-code",
-    "-Ywarn-numeric-widen",
-    "-Ywarn-value-discard"
-  ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, 12)) => scala212_opts ++ scala212_213_opts
-    case Some((2, 13)) => scala212_213_opts
-    case _ => Seq()
-  }),
-  scalacOptions in (Compile, console) --= Seq("-Xlint", "-Xfatal-warnings"),
+  scalacOptions ++= foldV(scalaVersion.value)(Seq(), Seq("-Ymacro-annotations")),
+  libraryDependencies ++= foldV(scalaVersion.value)(
+    Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)), Seq()),
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full),
   bintrayReleaseOnPublish in ThisBuild := false,
   skip in publish := true
@@ -84,21 +35,31 @@ lazy val core = project.in(file("core"))
   .settings(commonSettings ++ publishSettings ++ Seq(
     name := "composefree",
     addCompilerPlugin("com.github.ghik" % "silencer-plugin" % silencerVersion cross CrossVersion.full),
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
     libraryDependencies ++= Seq(
       "com.github.ghik" % "silencer-lib" % silencerVersion % Provided cross CrossVersion.full,
-      "com.projectseptember" %% "freek" % "0.7.0-LOCAL1",
+      "com.projectseptember" %% "freek" % "0.7.0-LOCAL2",
       "io.estatico" %% "newtype" % "0.4.3",
       "org.typelevel" %% "cats-core" % catsVersion,
       "org.typelevel" %% "cats-free" % catsVersion
     )
   ))
 
+lazy val plugin = project.in(file("plugin"))
+  .settings(commonSettings ++ publishSettings ++ Seq(
+    name := "composefree-plugin",
+    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
+    scalacOptions -= "-Ywarn-unused:patvars"
+  ))
+
+def enablePlugin(jar: File): Seq[String] =
+  Seq(s"-Xplugin:${jar.getAbsolutePath}", s"-Jdummy=${jar.lastModified}")
+
 lazy val example = project.in(file("example"))
   .dependsOn(core)
   .settings(commonSettings ++ Seq(
     name := "composefree-example",
-    bintrayRelease := {}
+    bintrayRelease := {},
+    scalacOptions ++= enablePlugin((plugin / Compile / Keys.`package`).value),
   ))
 
 lazy val bench = project.in(file("bench"))
@@ -117,5 +78,5 @@ lazy val root = project.in(file("."))
     bintrayRelease := {}
   ))
   .dependsOn(core)
-  .aggregate(core, example, bench)
+  .aggregate(core, plugin, example, bench)
   .enablePlugins(TutPlugin)

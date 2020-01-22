@@ -1,0 +1,4 @@
+<plugin>
+  <name>composefree</name>
+  <classname>composefree.ComposeFreePlugin</classname>
+</plugin>
