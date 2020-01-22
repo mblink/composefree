@@ -19,16 +19,13 @@ object numbers {
       _ <- set(r)
     } yield r
 
-  object RunNumbers {
-
-    def apply() = new (Numbers ~> Future) {
-      var x = 0
-      def apply[A](n: Numbers[A]) = n match {
-        case set(i) => Future.successful({ x = i })
-        case get() => Future.successful(x)
-        case add(i) => Future.successful({ x = x+i; x })
-        case minus(i) => Future.successful({ x = x-i; x })
-      }
+  val runNumbers = Lambda[Numbers ~> Future] { n =>
+    var x = 0
+    n match {
+      case set(i) => Future.successful({ x = i })
+      case get() => Future.successful(x)
+      case add(i) => Future.successful({ x = x+i; x })
+      case minus(i) => Future.successful({ x = x-i; x })
     }
   }
 }

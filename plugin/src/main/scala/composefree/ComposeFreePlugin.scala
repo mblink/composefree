@@ -51,7 +51,17 @@ class ComposeFreePlugin(override val global: Global) extends Plugin { self =>
   override lazy val name: String = "composefree"
   override lazy val description: String = "Expands composefree syntax"
 
-  def freshName(prefix: String): String = currentFreshNameCreator.newName(prefix)
+  type Id[A] = A
+
+  private def freshName(prefix: String): String = currentFreshNameCreator.newName(prefix)
+
+  private def withAllPos(tree: Tree, pos: Position): Tree = {
+    tree.foreach { t =>
+      if (!t.pos.isDefined || t.pos == NoPosition)
+        t.setPos(new TransparentPosition(pos.source, pos.start, pos.end, pos.end))
+    }
+    tree
+  }
 
   private def phase = new PluginComponent with TypingTransformers {
     override val phaseName: String = ComposeFreePlugin.this.name
@@ -63,29 +73,102 @@ class ComposeFreePlugin(override val global: Global) extends Plugin { self =>
 
     private def newTransformer(unit: CompilationUnit) =
       new TypingTransformer(unit) {
-        override def transform(tree: Tree): Tree = super.transform(tree match {
-          case Apply(TypeApply(Ident(TermName("composed")), tpes), args) =>
-            val valName = TermName(freshName("composefree"))
-            withAllPos(q"""
-            val ${valName} = _root_.composefree.ComposeFree[..$tpes]
-            import ${Ident(valName)}._
-            ..$args
-            """, tree.pos)
-          case _ => tree
-        })
+        private def combineDSL(cbc: Tree, t1: Tree, t2: Tree): Tree = tq"$cbc[$t1, $t2]"
+
+        private def maybeAddNilDSL(tree: Tree): Tree =
+          tree match {
+            case tq"NilDSL" | tq"freek.NilDSL" | tq"_root_.freek.NilDSL" => tree
+
+            case AppliedTypeTree(t @ (tq":|:" | tq"freek.:|:" | tq"_root_.freek.:|:"), List(t1, t2)) =>
+              combineDSL(t, t1, maybeAddNilDSL(t2))
+
+            case t =>
+              combineDSL(tq"_root_.freek.:|:", t, tq"_root_.freek.NilDSL")
+          }
+
+        private def withComposeFree[F[_]](tpe: Tree)(f: (ValDef, Import) => F[Tree]): F[Tree] = {
+          val valName = TermName(freshName("$composefree$"))
+          f(q"val ${valName} = _root_.composefree.ComposeFree[${maybeAddNilDSL(tpe)}]",
+            q"import ${Ident(valName)}._")
+        }
+
+        private def transformApplys(tree: Tree): Tree =
+          tree match {
+            case Apply(TypeApply(Ident(TermName("Composed")), List(tpe)), List(x)) =>
+              withComposeFree[Id](tpe)((v, i) => withAllPos(q"""
+                $v
+                $i
+                $x
+              """, tree.pos))
+
+            case Apply(TypeApply(Ident(TermName("Composed")), List(dslTpe, outTpe)), List(x)) =>
+              withComposeFree[Id](dslTpe)((v, i) => withAllPos(q"""
+                $v
+                $i
+                $x: _root_.composefree.Composed[${Ident(v.name)}.M, $outTpe]
+              """, tree.pos))
+
+            case _ => tree
+          }
+
+        private lazy val Composed = TypeName("Composed")
+        private lazy val ComposedAp = TypeName("ComposedAp")
+
+        private def transformComposed(cTpe: TypeName, dslTpe: Tree, outTpe: Tree)(mkDefn: (Tree, Import) => Tree): List[Tree] =
+          withComposeFree(dslTpe)((v, i) => List(v, mkDefn(tq"_root_.composefree.${cTpe}[${Ident(v.name)}.M, $outTpe]", i)))
+
+        private def transformComposedDefDef(d: DefDef, cTpe: TypeName, dslTpe: Tree, outTpe: Tree): List[Tree] =
+          transformComposed(cTpe, dslTpe, outTpe)(
+            (t, i) => q"${d.mods} def ${d.name}[..${d.tparams}](...${d.vparamss}): $t = { $i; ${d.rhs} }")
+
+        private def transformComposedValDef(v: ValDef, cTpe: TypeName, dslTpe: Tree, outTpe: Tree): List[Tree] =
+          transformComposed(cTpe, dslTpe, outTpe)((t, i) => q"${v.mods} val ${v.name}: $t = { $i; ${v.rhs} }")
+
+        private def selectedFromComposefree(tpe: Tree, cTpe: TypeName): Boolean =
+          tpe match {
+            case Ident(`cTpe`) => true
+            case Select(Ident(TermName("composefree")), `cTpe`) => true
+            case Select(Select(Ident(nme.ROOTPKG), TermName("composefree")), `cTpe`) => true
+            case _ => false
+          }
+
+        private def maybeTransformDefns(tree: Tree, cTpe: TypeName): Option[List[Tree]] =
+          tree match {
+            case t @ DefDef(_, _, _, _, AppliedTypeTree(tpe, List(d, o)), _) if selectedFromComposefree(tpe, cTpe) =>
+              Some(transformComposedDefDef(t, cTpe, d, o))
+
+            case t @ ValDef(_, _, AppliedTypeTree(tpe, List(d, o)), _) if selectedFromComposefree(tpe, cTpe) =>
+              Some(transformComposedValDef(t, cTpe, d, o))
+
+            case _ => None
+          }
+
+        private def transformDefns(tree: Tree): List[Tree] =
+          maybeTransformDefns(tree, Composed)
+            .orElse(maybeTransformDefns(tree, ComposedAp))
+            .getOrElse(List(transformApplys(tree)))
+
+        override def transform(tree: Tree): Tree =
+          super.transform(tree match {
+            case p: PackageDef =>
+              treeCopy.PackageDef(p, p.pid, p.stats.flatMap(transformDefns))
+
+            case m: ModuleDef =>
+              treeCopy.ModuleDef(m, m.mods, m.name,
+                treeCopy.Template(m.impl, m.impl.parents, m.impl.self, m.impl.body.flatMap(transformDefns)))
+
+            case c: ClassDef =>
+              treeCopy.ClassDef(c, c.mods, c.name, c.tparams,
+                treeCopy.Template(c.impl, c.impl.parents, c.impl.self, c.impl.body.flatMap(transformDefns)))
+
+            case _ => transformApplys(tree)
+          })
     }
 
     override val runsAfter: List[String] = List("parser")
     override val runsBefore: List[String] = List("namer")
 
-    private def withAllPos[A <: Tree](tree: A, pos: Position): A = {
-      tree.foreach { t =>
-        if (!t.pos.isDefined || t.pos == NoPosition)
-          t.setPos(new TransparentPosition(pos.source, pos.start, pos.end, pos.end))
-        ()
-      }
-      tree
-    }
+
   }
 
   override lazy val components: List[PluginComponent] = List(phase)

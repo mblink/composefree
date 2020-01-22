@@ -1,11 +1,10 @@
-import cats.{~>, Monad}
 import cats.free.{Free, FreeApplicative}
 import cats.syntax.either._
 import freek._
 import io.estatico.newtype.macros.newtype
 import io.estatico.newtype.ops._
 
-package object composefree extends composefree.RecProgSyntax {
+package object composefree extends composefree.ComposedSyntax {
   type ComposeNode[F[_], A] = Either[Free[F, A], FreeApplicative[F, A]]
 
   object ComposeNode {
@@ -32,9 +31,6 @@ package object composefree extends composefree.RecProgSyntax {
       cn.asLeft[F[A]].coerce
   }
 
-  type RecProg[F[_] <: CopK[_], A] = Free[RecNode[F, ?], A]
-  type RecApProg[F[_] <: CopK[_], A] = FreeApplicative[RecNode[F, ?], A]
-
-  def runComposed[F[_] <: CopK[_], M[_] <: CopK[_], G[_]: Monad, A](fa: RecProg[F, A])(i: Interpreter[M, G])(implicit s: SubCop[F, M]): G[A] =
-    fa.foldMap(RecInterp(Lambda[F ~> G](m => i.nat(s(m)))).interp)
+  type Composed[F[_] <: CopK[_], A] = Free[RecNode[F, ?], A]
+  type ComposedAp[F[_] <: CopK[_], A] = FreeApplicative[RecNode[F, ?], A]
 }
