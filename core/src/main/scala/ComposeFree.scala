@@ -1,6 +1,6 @@
 package composefree
 
-import cats.{~>, Applicative, InjectK, Monad}
+import cats.{~>, Applicative, InjectK, Monad, Parallel}
 import cats.data.EitherK
 import cats.evidence.As
 import cats.free.{Free, FreeApplicative}
@@ -76,20 +76,50 @@ trait ComposeFree[M[_]] extends ComposeOps {
   case class MNode[A](run: Free[RecNode, A]) extends ComposeNode[A]
   case class ANode[A](run: FreeApplicative[RecNode, A]) extends ComposeNode[A]
 
-  abstract class RecInterp[G[_]] extends (ComposeNode ~> G) {
-    def interp: (RecNode ~> G)
+  abstract class RecInterp[G[_]: Monad](mg: M ~> G) extends (ComposeNode ~> G) { self =>
+    def interp: RecNode ~> G = new (RecNode ~> G) {
+      def apply[A](rna: RecNode[A]): G[A] = rna.fold(self, mg)
+    }
+    def apply[A](cn: ComposeNode[A]): G[A] = cn match {
+      case MNode(mn) => mn.foldMap(interp)
+      case ANode(apn) => apn.foldMap(interp)
+    }
   }
 
-  def recInterp[G[_]](fg: (M ~> G))(implicit M: Monad[G]): RecInterp[G] =
-    new RecInterp[G] { self =>
-      lazy val interp: (RecNode ~> G) = new (RecNode ~> G) {
-        def apply[A](cp: RecNode[A]) = cp.fold(self, fg)
+  def seqRecInterp[G[_]: Monad](mg: M ~> G): RecInterp[G] =
+    new RecInterp[G](mg) {}
+
+  def recInterp[G[_]](mg: M ~> G)(implicit M: Monad[G], P: Parallel[G]): RecInterp[G] =
+    new RecInterp[G](mg) { self =>
+      type P[A] = P.F[A]
+
+      implicit val PMonad: Monad[P] = new Monad[P] {
+        def pure[A](a: A): P[A] =
+          P.parallel(M.pure(a))
+
+        def flatMap[A, B](fa: P[A])(f: A => P[B]): P[B] =
+          P.parallel(M.flatMap(P.sequential(fa))(a => P.sequential(f(a))))
+
+        def tailRecM[A, B](a: A)(f: A => P[Either[A, B]]): P[B] =
+          P.parallel(M.tailRecM(a)(x => P.sequential(f(x))))
       }
 
-      def apply[A](nf: ComposeNode[A]) = nf match {
-        case MNode(mn) => mn.foldMap(interp)
-        case ANode(apn) => apn.foldMap(interp)(M)
+      lazy val mp: M ~> P = new (M ~> P) {
+        def apply[A3](ma: M[A3]): P[A3] = P.parallel(mg(ma))
       }
+
+      lazy val rnp: RecNode ~> P = new (RecNode ~> P) {
+        def apply[A2](rna: RecNode[A2]): P[A2] = rna.fold(cnp, mp)
+      }
+
+      lazy val cnp: ComposeNode ~> P = new (ComposeNode ~> P) {
+        def apply[A](cn: ComposeNode[A]): P[A] = cn match {
+          case MNode(mn) => mn.foldMap(rnp)
+          case ANode(an) => an.foldMap(rnp)(P.applicative)
+        }
+      }
+
+      override def apply[A](cn: ComposeNode[A]): G[A] = P.sequential(cnp(cn))
     }
 
   implicit class FOps[F[_], A](fa: F[A])(implicit i: InjectK[F, M]) {
@@ -110,8 +140,11 @@ trait ComposeFree[M[_]] extends ComposeOps {
     def op: RecProg[A] = Free.liftF(EitherK.left[M](MNode(pa)): RecNode[A])
     def opAp: RecApProg[A] = FreeApplicative.lift(EitherK.left[M](MNode(pa)): RecNode[A])
 
-    def runWith[G[_]: Monad](fg: (M ~> G)): G[A] =
-      pa.foldMap(recInterp(fg).interp)
+    def runWithSeq[G[_]: Monad](fg: (M ~> G)): G[A] =
+      pa.foldMap(seqRecInterp(fg).interp)
+
+    def runWith[G[_]: Monad](mg: M ~> G)(implicit P: Parallel[G]): G[A] =
+      pa.foldMap(recInterp(mg).interp)
   }
 
   implicit class ApProgOps[A](apa: RecApProg[A]) {
@@ -123,8 +156,11 @@ trait ComposeFree[M[_]] extends ComposeOps {
     def op: RecProg[A] = Free.liftF(EitherK.left[M](nfa): RecNode[A])
     def opAp: RecApProg[A] = FreeApplicative.lift(EitherK.left[M](nfa): RecNode[A])
 
-    def runWith[G[_]: Monad](fg: (M ~> G)): G[A] =
-      nfa.op.foldMap(recInterp(fg).interp)
+    def runWithSeq[G[_]: Monad](mg: (M ~> G)): G[A] =
+      nfa.op.foldMap(seqRecInterp(mg).interp)
+
+    def runWith[G[_]: Monad](mg: M ~> G)(implicit P: Parallel[G]): G[A] =
+      nfa.opAp.foldMap(recInterp(mg).interp)
   }
 
   implicit class FreeApplicativeOps[A](p: FreeApplicative[M, A]) {
@@ -134,7 +170,7 @@ trait ComposeFree[M[_]] extends ComposeOps {
       p.foldMap(new (M ~> RecApProg) { def apply[B](m: M[B]) = m.opAp })
   }
 
-  implicit class ComposeFreeOps[A](p: Free[M, A]) {
+  implicit class ComposeFreeOpOps[A](p: Free[M, A]) {
     def op: Composed[A] =
       p.foldMap(new (M ~> Composed) { def apply[B](m: M[B]) = m.op })
   }

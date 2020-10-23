@@ -26,7 +26,7 @@ provided in the ComposeFree lib.
 First we define an ADT for our Console operations, and pattern match it
 in a natural transformation to an effectful monad.
 
-```tut:book:silent
+```mdoc:silent
 import cats.{~>, Id}
 
 sealed trait ConsoleOps[A]
@@ -41,7 +41,7 @@ object RunConsole extends (ConsoleOps ~> Id) {
 
 Now we need a natural transformation for the Pure dsl.
 
-```tut:book:silent
+```mdoc:silent
 import composefree.puredsl._
 
 object RunPure extends (PureOp ~> Id) {
@@ -54,7 +54,7 @@ object RunPure extends (PureOp ~> Id) {
 Then we can define the coproduct type for our application, and obtain our ComposeFree
 instance.
 
-```tut:book:silent
+```mdoc:silent
 import cats.data.EitherK
 import composefree.ComposeFree
 
@@ -68,7 +68,7 @@ object compose extends ComposeFree[Program.Program]
 Last we will create an interpreter for our program type by combining our individual
 interpreters.
 
-```tut:book:silent
+```mdoc:silent
 import composefree.syntax._
 
 val interp = RunConsole |: RunPure
@@ -76,7 +76,7 @@ val interp = RunConsole |: RunPure
 
 And finally we can define a program and execute it.
 
-```tut:book
+```mdoc
 val prog: compose.Composed[Unit] = {
   import compose._
   for {
@@ -94,7 +94,7 @@ prog.runWith(interp)
 Composite commands can be defined in individual DSLs and mixed into
 larger programs as follows.
 
-```tut:book
+```mdoc
 object PureComposite {
   import compose.lift._
   import composefree.syntax._
