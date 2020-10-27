@@ -20,6 +20,8 @@ lazy val commonSettings = Seq(
   skip in publish := true
 )
 
+commonSettings
+
 lazy val catsVersion = "2.2.0"
 lazy val catsCore = "org.typelevel" %% "cats-core" % catsVersion
 lazy val catsFree = "org.typelevel" %% "cats-free" % catsVersion
