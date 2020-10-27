@@ -3,10 +3,12 @@ package composefree.example
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.syntax.apply._
 import cats.syntax.traverse._
+import composefree.future._
 import composefree.example.console._
 import composefree.example.dsl._
 import composefree.example.numbers._
 import composefree.puredsl._
+import scala.concurrent.blocking
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
@@ -16,7 +18,7 @@ object Example extends IOApp {
   def stall[A](a: A): Composed[A] =
     for {
       _ <- print(s"stalling -- $a")
-      _ <- pure { Thread.sleep(3500L) }.as[PureOp]
+      _ <- pure { blocking(Thread.sleep(3500L)) }.as[PureOp]
       _ <- print(s"done stalling -- $a")
     } yield a
 
@@ -42,7 +44,7 @@ object Example extends IOApp {
   def run(args: List[String]): IO[ExitCode] =
     for {
       _ <- IO(println(s"************** Future ****************"))
-      _ <- IO.fromFuture(IO(prog.runWithSeq(examplecompose.futureInterp))).timeout(10.seconds)
+      _ <- IO.fromFuture(IO(prog.runWith(examplecompose.futureInterp))).timeout(10.seconds)
       _ <- IO(println(s"**************************************"))
 
       _ <- IO(println(s"************** IO ****************"))
