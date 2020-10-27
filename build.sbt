@@ -21,6 +21,7 @@ lazy val commonSettings = Seq(
 )
 
 commonSettings
+bintrayRelease := {}
 
 lazy val catsVersion = "2.2.0"
 lazy val catsCore = "org.typelevel" %% "cats-core" % catsVersion
@@ -64,18 +65,19 @@ lazy val future = project.in(file("future"))
   ))
 
 lazy val example = project.in(file("example"))
-  .dependsOn(core, future)
-  .aggregate(core, future)
   .settings(commonSettings ++ Seq(
     name := "composefree-example",
     libraryDependencies += "org.typelevel" %% "cats-effect" % catsVersion,
     bintrayRelease := {}
   ))
+  .dependsOn(core, future)
+  .aggregate(core, future)
 
 lazy val docs = project.in(file("composefree-docs"))
   .settings(commonSettings ++ Seq(
     mdocOut := file("."),
-    scalacOptions -= "-Xfatal-warnings"
+    scalacOptions -= "-Xfatal-warnings",
+    bintrayRelease := {}
   ))
   .dependsOn(core, future)
   .enablePlugins(MdocPlugin)
