@@ -21,3 +21,5 @@ jobs:
         run: sbt ++$SCALA_VERSION test
       - name: sbt example/run
         run: sbt ++$SCALA_VERSION example/run
+      - name: sbt docs/mdoc
+        run: sbt ++$SCALA_VERSION docs/mdoc

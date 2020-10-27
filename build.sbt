@@ -46,8 +46,7 @@ lazy val core = project.in(file("core"))
     name := "composefree",
     libraryDependencies ++= Seq(
       catsCore,
-      catsFree,
-      "org.typelevel" %% "cats-free" % catsVersion
+      catsFree
     )
   ))
 
@@ -72,8 +71,9 @@ lazy val example = project.in(file("example"))
   ))
 
 lazy val docs = project.in(file("composefree-docs"))
-  .settings(
-    mdocOut := file(".")
-  )
-  .dependsOn(core)
+  .settings(commonSettings ++ Seq(
+    mdocOut := file("."),
+    scalacOptions -= "-Xfatal-warnings"
+  ))
+  .dependsOn(core, future)
   .enablePlugins(MdocPlugin)
