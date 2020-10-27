@@ -26,7 +26,7 @@ provided in the ComposeFree lib.
 First we define an ADT for our Console operations, and pattern match it
 in a natural transformation to an effectful monad.
 
-```mdoc:silent
+```scala mdoc:silent
 import cats.{~>, Id}
 
 sealed trait ConsoleOps[A]
@@ -41,7 +41,7 @@ object RunConsole extends (ConsoleOps ~> Id) {
 
 Now we need a natural transformation for the Pure dsl.
 
-```mdoc:silent
+```scala mdoc:silent
 import composefree.puredsl._
 
 object RunPure extends (PureOp ~> Id) {
@@ -54,7 +54,7 @@ object RunPure extends (PureOp ~> Id) {
 Then we can define the coproduct type for our application, and obtain our ComposeFree
 instance.
 
-```mdoc:silent
+```scala mdoc:silent
 import cats.data.EitherK
 import composefree.ComposeFree
 
@@ -68,17 +68,16 @@ object compose extends ComposeFree[Program.Program]
 Last we will create an interpreter for our program type by combining our individual
 interpreters.
 
-```mdoc:silent
-import composefree.syntax._
+```scala mdoc:silent
+import compose._
 
 val interp = RunConsole |: RunPure
 ```
 
 And finally we can define a program and execute it.
 
-```mdoc
-val prog: compose.Composed[Unit] = {
-  import compose._
+```scala mdoc
+val prog1: compose.Composed[Unit] =
   for {
     s <- pure("Hello world!").as[PureOp]
     // use of .as[T] helper to cast as super type is
@@ -86,35 +85,32 @@ val prog: compose.Composed[Unit] = {
     // implicitly converted to the correct coproduct member type
     _ <- print(s)
   } yield ()
-}
 
-prog.runWith(interp)
+prog1.runWith(interp)
 ```
 
 Composite commands can be defined in individual DSLs and mixed into
 larger programs as follows.
 
-```mdoc
+```scala mdoc
 object PureComposite {
   import compose.lift._
-  import composefree.syntax._
   import cats.free.Free
 
   def makeTuple(s1: String, s2: String): Free[PureOp, (String, String)] =
     for {
-      a <- pure(s1).as[PureOp]
-      b <- pure(s2).as[PureOp]
+      a <- pure(s1).as[PureOp].liftF
+      b <- pure(s2).as[PureOp].liftF
     } yield (a, b)
 }
 
-import compose._
 import Program._
 
-val prog = for {
+val prog2 = for {
   s <- PureComposite.makeTuple("Hello", "World!").as[Program].op
   _ <- print(s._1)
   _ <- print(s._2)
 } yield ()
 
-prog.runWith(interp)
+prog2.runWith(interp)
 ```
