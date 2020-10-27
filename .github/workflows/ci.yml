@@ -7,9 +7,15 @@ on:
     branches:
       - master
 jobs:
-  test:
+  example:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        scala: [2.12.12, 2.13.3]
+    env:
+      SCALA_VERSION: ${{ matrix.scala }}
     steps:
       - uses: actions/checkout@v2
       - name: Run example
-        run: sbt example/run
+        run: sbt ++$SCALA_VERSION example/run
