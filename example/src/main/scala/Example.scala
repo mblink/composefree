@@ -1,25 +1,25 @@
 package composefree.example
 
-import cats.instances.future._
-import cats.instances.option._
+import cats.effect.{ExitCode, IO, IOApp}
 import cats.syntax.apply._
 import cats.syntax.traverse._
+import composefree.future._
 import composefree.example.console._
 import composefree.example.dsl._
 import composefree.example.numbers._
 import composefree.puredsl._
+import scala.concurrent.blocking
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.concurrent.Await
 
-object Example {
+object Example extends IOApp {
   import examplecompose._
 
   def stall[A](a: A): Composed[A] =
     for {
-      _ <- pure(println("stalling")).as[PureOp]
-      _ <- pure { Thread.sleep(3500L) }.as[PureOp]
-      _ = println(a)
+      _ <- print(s"stalling -- $a")
+      _ <- pure { blocking(Thread.sleep(3500L)) }.as[PureOp]
+      _ <- print(s"done stalling -- $a")
     } yield a
 
   val progA: Composed[Int] = (stall(1).opAp, stall(2).opAp).mapN(_ + _).op
@@ -37,9 +37,18 @@ object Example {
       _ <- print(b.toString)
       c <- add(10)
       r <- get()
-    } yield a + b + c + r
+      res = a + b + c + r
+      _ <- print(s"result: $res")
+    } yield res
 
-  def main(args: Array[String]): Unit = {
-    println(Await.result(prog.runWith(examplecompose.interp), 10.seconds))
-  }
+  def run(args: List[String]): IO[ExitCode] =
+    for {
+      _ <- IO(println(s"************** Future ****************"))
+      _ <- IO.fromFuture(IO(prog.runWith(examplecompose.futureInterp))).timeout(10.seconds)
+      _ <- IO(println(s"**************************************"))
+
+      _ <- IO(println(s"************** IO ****************"))
+      _ <- prog.runWith(examplecompose.ioInterp).timeout(10.seconds)
+      _ <- IO(println(s"**************************************"))
+    } yield ExitCode.Success
 }

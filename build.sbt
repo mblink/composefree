@@ -1,76 +1,34 @@
-lazy val scala212 = "2.12.10"
-lazy val scala213 = "2.13.1"
+Global / onChangedBuildSource := ReloadOnSourceChanges
 
-val scala212_opts = Seq(
-  "-Xfuture",
-  "-Xlint:by-name-right-associative",
-  "-Xlint:unsound-match",
-  "-Yno-adapted-args",
-  "-Ypartial-unification",
-  "-Ywarn-inaccessible",
-  "-Ywarn-infer-any",
-  "-Ywarn-nullary-override",
-  "-Ywarn-nullary-unit"
-)
+lazy val scala212 = "2.12.12"
+lazy val scala213 = "2.13.3"
 
-val scala212_213_opts = Seq(
-  "-Xlint:adapted-args",
-  "-Xlint:constant",
-  "-Xlint:delayedinit-select",
-  "-Xlint:doc-detached",
-  "-Xlint:inaccessible",
-  "-Xlint:infer-any",
-  "-Xlint:missing-interpolator",
-  "-Xlint:nullary-override",
-  "-Xlint:nullary-unit",
-  "-Xlint:option-implicit",
-  "-Xlint:package-object-classes",
-  "-Xlint:poly-implicit-overload",
-  "-Xlint:private-shadow",
-  "-Xlint:stars-align",
-  "-Xlint:type-parameter-shadow",
-  "-Ywarn-unused:implicits",
-  "-Ywarn-unused:imports",
-  "-Ywarn-unused:locals",
-  "-Ywarn-unused:params",
-  "-Ywarn-unused:patvars",
-  "-Ywarn-unused:privates",
-  "-Ywarn-extra-implicit",
-  "-Ycache-plugin-class-loader:last-modified",
-  "-Ycache-macro-class-loader:last-modified"
-)
+def forScalaV[A](scalaVersion: String)(_213: => A, _212: => A): A =
+  CrossVersion.partialVersion(scalaVersion) match {
+    case Some((2, 13)) => _213
+    case Some((2, 12)) => _212
+  }
 
 lazy val commonSettings = Seq(
-  version := "3.0.0",
+  version := "4.0.0",
   organization := "bondlink",
-  scalaVersion := scala212,
+  scalaVersion := scala213,
   crossScalaVersions := Seq(scala212, scala213),
-  scalacOptions ++= Seq(
-    "-deprecation",
-    "-encoding", "UTF-8",
-    "-explaintypes",
-    "-feature",
-    "-language:higherKinds",
-    "-language:implicitConversions",
-    "-unchecked",
-    "-Xcheckinit",
-    "-Xfatal-warnings",
-    "-Yrangepos",
-    "-Ywarn-dead-code",
-    "-Ywarn-numeric-widen",
-    "-Ywarn-value-discard"
-  ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, 12)) => scala212_opts ++ scala212_213_opts
-    case Some((2, 13)) => scala212_213_opts
-    case _ => Seq()
-  }),
-  scalacOptions in (Compile, console) --= Seq("-Xlint", "-Xfatal-warnings"),
+  scalacOptions in (Compile, console) ~= filterConsoleScalacOptions,
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full),
   bintrayReleaseOnPublish in ThisBuild := false,
   skip in publish := true
 )
 
-lazy val catsVersion = "2.1.0"
+commonSettings
+bintrayRelease := {}
+
+lazy val catsVersion = "2.2.0"
+lazy val catsCore = "org.typelevel" %% "cats-core" % catsVersion
+lazy val catsFree = "org.typelevel" %% "cats-free" % catsVersion
+lazy val catsLaws = "org.typelevel" %% "cats-laws" % catsVersion % Test
+lazy val newtype = "io.estatico" %% "newtype" % "0.4.4"
+lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.14.3" % Test
 
 lazy val publishSettings = Seq(
   skip in publish := false,
@@ -79,29 +37,47 @@ lazy val publishSettings = Seq(
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 )
 
+lazy val macroAnnotationSettings =
+  Seq(
+    scalacOptions ++= forScalaV(scalaVersion.value)(Seq("-Ymacro-annotations"), Seq()),
+    libraryDependencies ++= forScalaV(scalaVersion.value)(Seq(),
+      Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)))
+  )
+
 lazy val core = project.in(file("core"))
   .settings(commonSettings ++ publishSettings ++ Seq(
     name := "composefree",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % catsVersion,
-      "org.typelevel" %% "cats-free" % catsVersion
+      catsCore,
+      catsFree
+    )
+  ))
+
+lazy val future = project.in(file("future"))
+  .settings(commonSettings ++ publishSettings ++ macroAnnotationSettings ++ Seq(
+    name := "composefree-future",
+    libraryDependencies ++= Seq(
+      catsCore,
+      catsLaws,
+      newtype,
+      scalaCheck
     )
   ))
 
 lazy val example = project.in(file("example"))
-  .dependsOn(core)
   .settings(commonSettings ++ Seq(
     name := "composefree-example",
+    libraryDependencies += "org.typelevel" %% "cats-effect" % catsVersion,
     bintrayRelease := {}
   ))
+  .dependsOn(core, future)
+  .aggregate(core, future)
 
-lazy val root = project.in(file("."))
+lazy val docs = project.in(file("composefree-docs"))
   .settings(commonSettings ++ Seq(
-    crossScalaVersions := Seq(scala212),
-    tutTargetDirectory := file("."),
-    scalacOptions in Tut := (scalacOptions in (Compile, console)).value,
+    mdocOut := file("."),
+    scalacOptions -= "-Xfatal-warnings",
     bintrayRelease := {}
   ))
-  .dependsOn(core)
-  .aggregate(core, example)
-  .enablePlugins(TutPlugin)
+  .dependsOn(core, future)
+  .enablePlugins(MdocPlugin)

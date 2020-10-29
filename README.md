@@ -69,7 +69,7 @@ Last we will create an interpreter for our program type by combining our individ
 interpreters.
 
 ```scala
-import composefree.syntax._
+import compose._
 
 val interp = RunConsole |: RunPure
 ```
@@ -77,8 +77,7 @@ val interp = RunConsole |: RunPure
 And finally we can define a program and execute it.
 
 ```scala
-val prog: compose.Composed[Unit] = {
-  import compose._
+val prog1: compose.Composed[Unit] =
   for {
     s <- pure("Hello world!").as[PureOp]
     // use of .as[T] helper to cast as super type is
@@ -86,12 +85,20 @@ val prog: compose.Composed[Unit] = {
     // implicitly converted to the correct coproduct member type
     _ <- print(s)
   } yield ()
-}
-// prog: compose.Composed[Unit] = Free(...)
+// prog1: Composed[Unit] = FlatMapped(
+//   c = Suspend(
+//     a = EitherK(
+//       run = Right(
+//         value = EitherK(run = Right(value = pure(a = "Hello world!")))
+//       )
+//     )
+//   ),
+//   f = <function1>
+// )
 
-prog.runWith(interp)
+prog1.runWith(interp)
 // Hello world!
-// res0: cats.Id[Unit] = ()
+// res0: Id[Unit] = ()
 ```
 
 Composite commands can be defined in individual DSLs and mixed into
@@ -100,32 +107,47 @@ larger programs as follows.
 ```scala
 object PureComposite {
   import compose.lift._
-  import composefree.syntax._
   import cats.free.Free
 
   def makeTuple(s1: String, s2: String): Free[PureOp, (String, String)] =
     for {
-      a <- pure(s1).as[PureOp]
-      b <- pure(s2).as[PureOp]
+      a <- pure(s1).as[PureOp].liftF
+      b <- pure(s2).as[PureOp].liftF
     } yield (a, b)
 }
-// defined object PureComposite
-
-import compose._
-// import compose._
 
 import Program._
-// import Program._
 
-val prog = for {
+val prog2 = for {
   s <- PureComposite.makeTuple("Hello", "World!").as[Program].op
   _ <- print(s._1)
   _ <- print(s._2)
 } yield ()
-// prog: cats.free.Free[compose.RecNode,Unit] = Free(...)
+// prog2: cats.free.Free[RecNode, Unit] = FlatMapped(
+//   c = FlatMapped(
+//     c = FlatMapped(
+//       c = FlatMapped(
+//         c = FlatMapped(
+//           c = Suspend(
+//             a = EitherK(
+//               run = Right(
+//                 value = EitherK(run = Right(value = pure(a = "Hello")))
+//               )
+//             )
+//           ),
+//           f = cats.free.Free$$Lambda$19496/237392143@da78629
+//         ),
+//         f = cats.StackSafeMonad$$Lambda$19497/433001376@c2edac
+//       ),
+//       f = cats.free.Free$$Lambda$19496/237392143@36fd2864
+//     ),
+//     f = cats.StackSafeMonad$$Lambda$19497/433001376@499cda81
+//   ),
+//   f = <function1>
+// )
 
-prog.runWith(interp)
+prog2.runWith(interp)
 // Hello
 // World!
-// res1: cats.Id[Unit] = ()
+// res1: Id[Unit] = ()
 ```

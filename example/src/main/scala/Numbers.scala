@@ -1,6 +1,7 @@
 package composefree.example
 
 import cats.~>
+import cats.effect.IO
 import cats.free.Free
 import composefree.syntax.lift._
 import scala.concurrent.Future
@@ -19,8 +20,7 @@ object numbers {
       _ <- set(r)
     } yield r
 
-  object RunNumbers {
-
+  object RunNumbersFuture {
     def apply() = new (Numbers ~> Future) {
       var x = 0
       def apply[A](n: Numbers[A]) = n match {
@@ -28,6 +28,18 @@ object numbers {
         case get() => Future.successful(x)
         case add(i) => Future.successful({ x = x+i; x })
         case minus(i) => Future.successful({ x = x-i; x })
+      }
+    }
+  }
+
+  object RunNumbersIO {
+    def apply() = new (Numbers ~> IO) {
+      var x = 0
+      def apply[A](n: Numbers[A]) = n match {
+        case set(i) => IO.pure({ x = i })
+        case get() => IO.pure(x)
+        case add(i) => IO.pure({ x = x+i; x })
+        case minus(i) => IO.pure({ x = x-i; x })
       }
     }
   }

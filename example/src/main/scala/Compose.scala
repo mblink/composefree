@@ -2,6 +2,7 @@ package composefree.example
 
 import cats.~>
 import cats.data.EitherK
+import cats.effect.IO
 import composefree.ComposeFree
 import composefree.puredsl._
 import composefree.example.console._
@@ -16,13 +17,22 @@ object dsl {
 
 object examplecompose extends ComposeFree[Program] {
 
-  object RunPure extends (PureOp ~> Future) {
+  object RunPureFuture extends (PureOp ~> Future) {
     def apply[A](p: PureOp[A]) = p match {
       case pure(p) => Future.successful(p)
     }
   }
 
-  val interp: Program ~> Future =
-    RunConsole.or(RunPure.or(RunNumbers()): (PN ~> Future))
+  object RunPureIO extends (PureOp ~> IO) {
+    def apply[A](p: PureOp[A]) = p match {
+      case pure(p) => IO.pure(p)
+    }
+  }
+
+  val futureInterp: Program ~> Future =
+    RunConsoleFuture |: RunPureFuture |: RunNumbersFuture()
+
+  val ioInterp: Program ~> IO =
+    RunConsoleIO |: RunPureIO |: RunNumbersIO()
 }
 

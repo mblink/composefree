@@ -9,7 +9,17 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        scala: [2.12.12, 2.13.3]
+    env:
+      SCALA_VERSION: ${{ matrix.scala }}
     steps:
       - uses: actions/checkout@v2
-      - name: Run example
-        run: sbt example/run
+      - name: sbt test
+        run: sbt ++$SCALA_VERSION test
+      - name: sbt example/run
+        run: sbt ++$SCALA_VERSION example/run
+      - name: sbt docs/mdoc
+        run: sbt ++$SCALA_VERSION docs/mdoc
