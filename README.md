@@ -86,8 +86,14 @@ val prog1: compose.Composed[Unit] =
     _ <- print(s)
   } yield ()
 // prog1: Composed[Unit] = FlatMapped(
-//   Suspend(EitherK(Right(EitherK(Right(pure("Hello world!")))))),
-//   <function1>
+//   c = Suspend(
+//     a = EitherK(
+//       run = Right(
+//         value = EitherK(run = Right(value = pure(a = "Hello world!")))
+//       )
+//     )
+//   ),
+//   f = <function1>
 // )
 
 prog1.runWith(interp)
@@ -118,20 +124,26 @@ val prog2 = for {
   _ <- print(s._2)
 } yield ()
 // prog2: cats.free.Free[RecNode, Unit] = FlatMapped(
-//   FlatMapped(
-//     FlatMapped(
-//       FlatMapped(
-//         FlatMapped(
-//           Suspend(EitherK(Right(EitherK(Right(pure("Hello")))))),
-//           cats.free.Free$$Lambda$28454/1120986193@af883f4
+//   c = FlatMapped(
+//     c = FlatMapped(
+//       c = FlatMapped(
+//         c = FlatMapped(
+//           c = Suspend(
+//             a = EitherK(
+//               run = Right(
+//                 value = EitherK(run = Right(value = pure(a = "Hello")))
+//               )
+//             )
+//           ),
+//           f = cats.free.Free$$Lambda$19496/237392143@da78629
 //         ),
-//         cats.StackSafeMonad$$Lambda$28455/45888863@5aa39d8a
+//         f = cats.StackSafeMonad$$Lambda$19497/433001376@c2edac
 //       ),
-//       cats.free.Free$$Lambda$28454/1120986193@67a0f220
+//       f = cats.free.Free$$Lambda$19496/237392143@36fd2864
 //     ),
-//     cats.StackSafeMonad$$Lambda$28455/45888863@2e5c6472
+//     f = cats.StackSafeMonad$$Lambda$19497/433001376@499cda81
 //   ),
-//   <function1>
+//   f = <function1>
 // )
 
 prog2.runWith(interp)
