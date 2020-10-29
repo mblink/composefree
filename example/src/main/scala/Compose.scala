@@ -30,9 +30,9 @@ object examplecompose extends ComposeFree[Program] {
   }
 
   val futureInterp: Program ~> Future =
-    RunConsoleFuture.or(RunPureFuture.or(RunNumbersFuture()): (PN ~> Future))
+    RunConsoleFuture |: RunPureFuture |: RunNumbersFuture()
 
   val ioInterp: Program ~> IO =
-    RunConsoleIO.or(RunPureIO.or(RunNumbersIO()): (PN ~> IO))
+    RunConsoleIO |: RunPureIO |: RunNumbersIO()
 }
 
