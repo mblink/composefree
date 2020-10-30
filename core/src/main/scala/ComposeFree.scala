@@ -104,15 +104,14 @@ trait ComposeFree[M[_]] extends ComposeOps {
       lazy val rnp: RecNode ~> P = Lambda[RecNode ~> P](_.fold(cnp, mp))
 
       lazy val cnp: ComposeNode ~> P = Lambda[ComposeNode ~> P](_ match {
-        case MNode(mn) => mn.foldMap(rnp)
+        case MNode(mn) => P.parallel(mn.foldMap(interp))
         case ANode(an) => an.foldMap(rnp)(P.applicative)
       })
 
-      override def interp: RecNode ~> G =
-        rnp.andThen(P.sequential)
-
-      override def apply[A](cn: ComposeNode[A]): G[A] =
-        P.sequential(cnp(cn))
+      override def apply[A](cn: ComposeNode[A]): G[A] = cn match {
+        case MNode(mn) => mn.foldMap(interp)
+        case ANode(an) => P.sequential(an.foldMap(rnp))
+      }
     }
 
   implicit class FOps[F[_], A](fa: F[A])(implicit i: InjectK[F, M]) {
