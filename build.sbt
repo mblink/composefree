@@ -1,7 +1,7 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val scala212 = "2.12.12"
-lazy val scala213 = "2.13.3"
+lazy val scala213 = "2.13.5"
 
 def forScalaV[A](scalaVersion: String)(_213: => A, _212: => A): A =
   CrossVersion.partialVersion(scalaVersion) match {
@@ -10,30 +10,28 @@ def forScalaV[A](scalaVersion: String)(_213: => A, _212: => A): A =
   }
 
 lazy val commonSettings = Seq(
-  version := "4.0.1",
+  version := "4.1.0",
   organization := "bondlink",
   scalaVersion := scala213,
   crossScalaVersions := Seq(scala212, scala213),
   scalacOptions in (Compile, console) ~= filterConsoleScalacOptions,
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full),
-  bintrayReleaseOnPublish in ThisBuild := false,
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full),
   skip in publish := true
 )
 
 commonSettings
-bintrayRelease := {}
+gitRelease := {}
 
-lazy val catsVersion = "2.2.0"
+lazy val catsVersion = "2.4.2"
 lazy val catsCore = "org.typelevel" %% "cats-core" % catsVersion
 lazy val catsFree = "org.typelevel" %% "cats-free" % catsVersion
 lazy val catsLaws = "org.typelevel" %% "cats-laws" % catsVersion % Test
 lazy val newtype = "io.estatico" %% "newtype" % "0.4.4"
-lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.14.3" % Test
+lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.3" % Test
 
 lazy val publishSettings = Seq(
   skip in publish := false,
-  bintrayOrganization := Some("bondlink"),
-  bintrayRepository := "composefree",
+  gitPublishDir := file("/src/maven-repo"),
   licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
 )
 
@@ -67,8 +65,8 @@ lazy val future = project.in(file("future"))
 lazy val example = project.in(file("example"))
   .settings(commonSettings ++ Seq(
     name := "composefree-example",
-    libraryDependencies += "org.typelevel" %% "cats-effect" % catsVersion,
-    bintrayRelease := {}
+    libraryDependencies += "org.typelevel" %% "cats-effect" % "3.0.0-RC2",
+    gitRelease := {}
   ))
   .dependsOn(core, future)
   .aggregate(core, future)
@@ -77,7 +75,7 @@ lazy val docs = project.in(file("composefree-docs"))
   .settings(commonSettings ++ Seq(
     mdocOut := file("."),
     scalacOptions -= "-Xfatal-warnings",
-    bintrayRelease := {}
+    gitRelease := {}
   ))
   .dependsOn(core, future)
   .enablePlugins(MdocPlugin)

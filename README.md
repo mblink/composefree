@@ -135,13 +135,13 @@ val prog2 = for {
 //               )
 //             )
 //           ),
-//           f = cats.free.Free$$Lambda$19496/237392143@da78629
+//           f = cats.free.Free$$Lambda$12537/1847662132@af0715f
 //         ),
-//         f = cats.StackSafeMonad$$Lambda$19497/433001376@c2edac
+//         f = cats.StackSafeMonad$$Lambda$12538/1216179434@4f48b0b1
 //       ),
-//       f = cats.free.Free$$Lambda$19496/237392143@36fd2864
+//       f = cats.free.Free$$Lambda$12537/1847662132@50c62f84
 //     ),
-//     f = cats.StackSafeMonad$$Lambda$19497/433001376@499cda81
+//     f = cats.StackSafeMonad$$Lambda$12538/1216179434@70aca0fd
 //   ),
 //   f = <function1>
 // )
