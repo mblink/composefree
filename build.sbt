@@ -1,7 +1,7 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-lazy val scala212 = "2.12.13"
-lazy val scala213 = "2.13.5"
+lazy val scala212 = "2.12.15"
+lazy val scala213 = "2.13.8"
 
 def forScalaV[A](scalaVersion: String)(_213: => A, _212: => A): A =
   CrossVersion.partialVersion(scalaVersion) match {
@@ -15,19 +15,19 @@ lazy val commonSettings = Seq(
   scalaVersion := scala213,
   crossScalaVersions := Seq(scala212, scala213),
   Compile / console / scalacOptions ~= filterConsoleScalacOptions,
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVersion.full),
   publish / skip := true
 )
 
 commonSettings
 gitRelease := {}
 
-lazy val catsVersion = "2.6.0"
+lazy val catsVersion = "2.7.0"
 lazy val catsCore = "org.typelevel" %% "cats-core" % catsVersion
 lazy val catsFree = "org.typelevel" %% "cats-free" % catsVersion
 lazy val catsLaws = "org.typelevel" %% "cats-laws" % catsVersion % Test
 lazy val newtype = "io.estatico" %% "newtype" % "0.4.4"
-lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.3" % Test
+lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.4" % Test
 
 lazy val publishSettings = Seq(
   publish / skip := false,
