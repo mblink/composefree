@@ -32,7 +32,7 @@ lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.4" % Test
 lazy val publishSettings = Seq(
   publish / skip := false,
   gitPublishDir := file("/src/maven-repo"),
-  licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
+  licenses += License.Apache2,
 )
 
 lazy val macroAnnotationSettings =
