@@ -3,7 +3,7 @@ package composefree.example
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.syntax.apply._
 import cats.syntax.traverse._
-import composefree.future._
+import composefree.future.{given, _}
 import composefree.example.console._
 import composefree.example.dsl._
 import composefree.example.numbers._

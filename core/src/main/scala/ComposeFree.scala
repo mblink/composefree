@@ -27,13 +27,19 @@ trait ComposeOps extends LPSyntax {
       p.foldMap(i)
 
     def as[GG[_]](implicit i: InjectK[G, GG]): FreeApplicative[GG, A] =
-      p.foldMap(Lambda[G ~> FreeApplicative[GG, *]](g => FreeApplicative.lift(i.inj(g))))
+      p.foldMap(new (G ~> FreeApplicative[GG, *]) {
+        def apply[a](g: G[a]) = FreeApplicative.lift(i.inj(g))
+      })
 
     def asM[GG[_]](implicit i: InjectK[G, GG]): Free[GG, A] =
-      p.foldMap(Lambda[G ~> Free[GG, *]](g => Free.liftF(i.inj(g))))
+      p.foldMap(new (G ~> Free[GG, *]) {
+        def apply[a](g: G[a]) = Free.liftF(i.inj(g))
+      })
 
     def asM: Free[G, A] =
-      p.foldMap(Lambda[G ~> Free[G, *]](Free.liftF(_)))
+      p.foldMap(new (G ~> Free[G, *]) {
+        def apply[a](g: G[a]) = Free.liftF(g)
+      })
   }
 
   implicit class ComposeFreeOps[M[_], A](p: Free[M, A]) {
@@ -41,7 +47,9 @@ trait ComposeOps extends LPSyntax {
       p.foldMap(i)
 
     def as[G[_]](implicit i: InjectK[M, G]): Free[G, A] =
-      p.foldMap(Lambda[M ~> Free[G, *]](m => Free.liftF(i.inj(m))))
+      p.foldMap(new (M ~> Free[G, *]) {
+        def apply[a](m: M[a]) = Free.liftF(i.inj(m))
+      })
   }
 
   object lift {
@@ -70,7 +78,9 @@ trait ComposeFree[M[_]] extends ComposeOps {
 
   class RecInterp[G[_]: Monad](mg: M ~> G) extends (ComposeNode ~> G) { self =>
     def interp: RecNode ~> G =
-      Lambda[RecNode ~> G](_.fold(self, mg))
+      new (RecNode ~> G) {
+        def apply[A](n: RecNode[A]) = n.fold(self, mg)
+      }
 
     def apply[A](cn: ComposeNode[A]): G[A] = cn match {
       case MNode(mn) => mn.foldMap(interp)
@@ -101,12 +111,16 @@ trait ComposeFree[M[_]] extends ComposeOps {
 
       lazy val mp: M ~> P = mg.andThen(P.parallel)
 
-      lazy val rnp: RecNode ~> P = Lambda[RecNode ~> P](_.fold(cnp, mp))
+      lazy val rnp: RecNode ~> P = new (RecNode ~> P) {
+        def apply[A](n: RecNode[A]) = n.fold(cnp, mp)
+      }
 
-      lazy val cnp: ComposeNode ~> P = Lambda[ComposeNode ~> P](_ match {
-        case MNode(mn) => P.parallel(mn.foldMap(interp))
-        case ANode(an) => an.foldMap(rnp)(P.applicative)
-      })
+      lazy val cnp: ComposeNode ~> P = new (ComposeNode ~> P) {
+        def apply[A](n: ComposeNode[A]) = n match {
+          case MNode(mn) => P.parallel(mn.foldMap(interp))
+          case ANode(an) => an.foldMap(rnp)(P.applicative)
+        }
+      }
 
       override def apply[A](cn: ComposeNode[A]): G[A] = cn match {
         case MNode(mn) => mn.foldMap(interp)
@@ -168,15 +182,21 @@ trait ComposeFree[M[_]] extends ComposeOps {
 
   implicit class FreeApplicativeOps[A](p: FreeApplicative[M, A]) {
     def op: Composed[A] =
-      p.foldMap(Lambda[M ~> Composed](_.op))
+      p.foldMap(new (M ~> Composed) {
+        def apply[a](m: M[a]) = m.op
+      })
 
     def opAp: RecApProg[A] =
-      p.foldMap(Lambda[M ~> RecApProg](_.opAp))
+      p.foldMap(new (M ~> RecApProg) {
+        def apply[a](m: M[a]) = m.opAp
+      })
   }
 
   implicit class ComposeFreeOpOps[A](p: Free[M, A]) {
     def op: Composed[A] =
-      p.foldMap(Lambda[M ~> Composed](_.op))
+      p.foldMap(new (M ~> Composed) {
+        def apply[a](m: M[a]) = m.op
+      })
   }
 
   implicit def f2fnf[F[_], A](fa: F[A])(implicit i: InjectK[F, M]): Composed[A] = fa.op

@@ -1,33 +1,45 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-lazy val scala212 = "2.12.15"
-lazy val scala213 = "2.13.8"
+lazy val scala212 = "2.12.17"
+lazy val scala213 = "2.13.10"
+lazy val scala3 = "3.2.1"
 
-def forScalaV[A](scalaVersion: String)(_213: => A, _212: => A): A =
+lazy val kindProjector = compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVersion.full)
+
+def forScalaV[A](scalaVersion: String)(_212: => A, _213: => A, _3: => A): A =
   CrossVersion.partialVersion(scalaVersion) match {
     case Some((2, 13)) => _213
     case Some((2, 12)) => _212
+    case Some((3, _)) => _3
   }
 
 lazy val commonSettings = Seq(
   version := "4.1.2",
   organization := "bondlink",
-  scalaVersion := scala213,
-  crossScalaVersions := Seq(scala212, scala213),
-  Compile / console / scalacOptions ~= filterConsoleScalacOptions,
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVersion.full),
+  scalaVersion := scala3,
+  crossScalaVersions := Seq(scala212, scala213, scala3),
+  scalacOptions ++= forScalaV(scalaVersion.value)(
+    Seq("-Xsource:3.2"),
+    Seq("-Xsource:3.2", "-Ymacro-annotations"),
+    Seq(),
+  ),
+  libraryDependencies ++= forScalaV(scalaVersion.value)(
+    Seq(kindProjector),
+    Seq(kindProjector),
+    Seq(),
+  ),
   publish / skip := true
 )
 
 commonSettings
 gitRelease := {}
 
-lazy val catsVersion = "2.7.0"
+lazy val catsVersion = "2.9.0"
 lazy val catsCore = "org.typelevel" %% "cats-core" % catsVersion
 lazy val catsFree = "org.typelevel" %% "cats-free" % catsVersion
 lazy val catsLaws = "org.typelevel" %% "cats-laws" % catsVersion % Test
 lazy val newtype = "io.estatico" %% "newtype" % "0.4.4"
-lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.4" % Test
+lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.17.0" % Test
 
 lazy val publishSettings = Seq(
   publish / skip := false,
@@ -37,9 +49,12 @@ lazy val publishSettings = Seq(
 
 lazy val macroAnnotationSettings =
   Seq(
-    scalacOptions ++= forScalaV(scalaVersion.value)(Seq("-Ymacro-annotations"), Seq()),
-    libraryDependencies ++= forScalaV(scalaVersion.value)(Seq(),
-      Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)))
+    scalacOptions ++= forScalaV(scalaVersion.value)(Seq(), Seq("-Ymacro-annotations"), Seq()),
+    libraryDependencies ++= forScalaV(scalaVersion.value)(
+      Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)),
+      Seq(),
+      Seq(),
+    )
   )
 
 lazy val core = project.in(file("core"))
@@ -57,15 +72,19 @@ lazy val future = project.in(file("future"))
     libraryDependencies ++= Seq(
       catsCore,
       catsLaws,
-      newtype,
-      scalaCheck
-    )
+      scalaCheck,
+    ),
+    libraryDependencies ++= forScalaV(scalaVersion.value)(
+      Seq(newtype),
+      Seq(newtype),
+      Seq(),
+    ),
   ))
 
 lazy val example = project.in(file("example"))
   .settings(commonSettings ++ Seq(
     name := "composefree-example",
-    libraryDependencies += "org.typelevel" %% "cats-effect" % "3.1.0",
+    libraryDependencies += "org.typelevel" %% "cats-effect" % "3.4.8",
     gitRelease := {}
   ))
   .dependsOn(core, future)
