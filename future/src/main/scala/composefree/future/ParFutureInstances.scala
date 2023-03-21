@@ -12,8 +12,12 @@ private[future] trait ParFutureInstances0 extends ParFutureInstances1 {
       type F[a] = ParFuture[a]
       lazy val monad: Monad[Future] = cats.instances.future.catsStdInstancesForFuture
       lazy val applicative: Applicative[ParFuture] = ParFuture.applicativeErrorForParFuture
-      lazy val parallel: Future ~> ParFuture = Lambda[Future ~> ParFuture](ParFuture(_))
-      lazy val sequential: ParFuture ~> Future = Lambda[ParFuture ~> Future](_.run)
+      lazy val parallel: Future ~> ParFuture = new (Future ~> ParFuture) {
+        def apply[A](f: Future[A]): ParFuture[A] = ParFuture(f)
+      }
+      lazy val sequential: ParFuture ~> Future = new (ParFuture ~> Future) {
+        def apply[A](f: ParFuture[A]): Future[A] = f.run
+      }
     }
 
   implicit def applicativeErrorForParFuture(implicit ec: ExecutionContext): ApplicativeError[ParFuture, Throwable] =
