@@ -73,7 +73,9 @@ trait ComposeFree[M[_]] extends ComposeOps {
 
   final type ComposeNode[A] = composefree.ComposeNode[M, A]
   final type MNode[A] = composefree.MNode[M, A]
+  final val MNode: composefree.MNode.type = composefree.MNode
   final type ANode[A] = composefree.ANode[M, A]
+  final val ANode: composefree.ANode.type = composefree.ANode
 
   class RecInterp[G[_]: Monad](mg: M ~> G) extends (ComposeNode ~> G) { self =>
     def interp: RecNode ~> G =
