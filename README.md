@@ -27,7 +27,7 @@ First we define an ADT for our Console operations, and pattern match it
 in a natural transformation to an effectful monad.
 
 ```scala
-import cats.{~>, Id}
+import cats._
 
 sealed trait ConsoleOps[A]
 case class print(s: String) extends ConsoleOps[Unit]
@@ -123,7 +123,7 @@ val prog2 = for {
   _ <- print(s._1)
   _ <- print(s._2)
 } yield ()
-// prog2: cats.free.Free[RecNode, Unit] = FlatMapped(
+// prog2: free.Free[[β$6$]EitherK[[β$4$]ComposeNode[Program, β$4$], Program, β$6$], Unit] = FlatMapped(
 //   c = FlatMapped(
 //     c = FlatMapped(
 //       c = FlatMapped(
@@ -135,13 +135,13 @@ val prog2 = for {
 //               )
 //             )
 //           ),
-//           f = cats.free.Free$$Lambda$12537/1847662132@af0715f
+//           f = cats.free.Free$$Lambda$25374/0x00000008030ae250@3508490
 //         ),
-//         f = cats.StackSafeMonad$$Lambda$12538/1216179434@4f48b0b1
+//         f = cats.StackSafeMonad$$Lambda$25375/0x00000008030af900@7203e563
 //       ),
-//       f = cats.free.Free$$Lambda$12537/1847662132@50c62f84
+//       f = cats.free.Free$$Lambda$25374/0x00000008030ae250@71b8ccf1
 //     ),
-//     f = cats.StackSafeMonad$$Lambda$12538/1216179434@70aca0fd
+//     f = cats.StackSafeMonad$$Lambda$25375/0x00000008030af900@39cb40b0
 //   ),
 //   f = <function1>
 // )

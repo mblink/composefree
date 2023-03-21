@@ -27,7 +27,7 @@ First we define an ADT for our Console operations, and pattern match it
 in a natural transformation to an effectful monad.
 
 ```scala mdoc:silent
-import cats.{~>, Id}
+import cats._
 
 sealed trait ConsoleOps[A]
 case class print(s: String) extends ConsoleOps[Unit]
@@ -68,17 +68,6 @@ object compose extends ComposeFree[Program.Program]
 Last we will create an interpreter for our program type by combining our individual
 interpreters.
 
-```scala mdoc:invisible
-implicit def eitherKFuncionKTPrint[F[_], G[_], O[_]](
-  implicit tpf: pprint.TPrint[F[_]],
-  tpg: pprint.TPrint[G[_]],
-  tpo: pprint.TPrint[O[_]]
-): pprint.TPrint[EitherK[F, G, *] ~> O] =
-  new pprint.TPrint[EitherK[F, G, *] ~> O] {
-    def render(implicit cf: pprint.TPrintColors): String =
-      s"FunctionK[EitherK[${tpf.render}, ${tpg.render}], ${tpo.render}]"
-  }
-```
 ```scala mdoc:silent
 import compose._
 
