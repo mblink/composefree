@@ -7,6 +7,7 @@ package object future {
   opaque type ParFuture[+A] = Future[A]
   object ParFuture extends ParFutureInstances0 {
     def apply[A](f: Future[A]): ParFuture[A] = f
+    def deriving[T[_], A](implicit t: T[Future[A]]): T[ParFuture[A]] = t
   }
 
   extension[A](f: ParFuture[A]) def run: Future[A] = f

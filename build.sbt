@@ -1,15 +1,13 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-lazy val scala212 = "2.12.17"
 lazy val scala213 = "2.13.10"
-lazy val scala3 = "3.2.1"
+lazy val scala3 = "3.3.0-RC3"
 
 lazy val kindProjector = compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVersion.full)
 
-def forScalaV[A](scalaVersion: String)(_212: => A, _213: => A, _3: => A): A =
+def forScalaV[A](scalaVersion: String)(_213: => A, _3: => A): A =
   CrossVersion.partialVersion(scalaVersion) match {
     case Some((2, 13)) => _213
-    case Some((2, 12)) => _212
     case Some((3, _)) => _3
   }
 
@@ -17,14 +15,14 @@ lazy val commonSettings = Seq(
   version := "4.1.2",
   organization := "bondlink",
   scalaVersion := scala3,
-  crossScalaVersions := Seq(scala212, scala213, scala3),
-  scalacOptions ++= forScalaV(scalaVersion.value)(
-    Seq("-Xsource:3.2"),
-    Seq("-Xsource:3.2", "-Ymacro-annotations"),
+  crossScalaVersions := Seq(scala213, scala3),
+  scalacOptions ++= Seq(
+    "-Wconf:msg=package object inheritance is deprecated:s",
+  ) ++ forScalaV(scalaVersion.value)(
+    Seq("-Xsource:3.3", "-Ymacro-annotations"),
     Seq(),
   ),
   libraryDependencies ++= forScalaV(scalaVersion.value)(
-    Seq(kindProjector),
     Seq(kindProjector),
     Seq(),
   ),
@@ -47,16 +45,6 @@ lazy val publishSettings = Seq(
   licenses += License.Apache2,
 )
 
-lazy val macroAnnotationSettings =
-  Seq(
-    scalacOptions ++= forScalaV(scalaVersion.value)(Seq(), Seq("-Ymacro-annotations"), Seq()),
-    libraryDependencies ++= forScalaV(scalaVersion.value)(
-      Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)),
-      Seq(),
-      Seq(),
-    )
-  )
-
 lazy val core = project.in(file("core"))
   .settings(commonSettings ++ publishSettings ++ Seq(
     name := "composefree",
@@ -67,7 +55,7 @@ lazy val core = project.in(file("core"))
   ))
 
 lazy val future = project.in(file("future"))
-  .settings(commonSettings ++ publishSettings ++ macroAnnotationSettings ++ Seq(
+  .settings(commonSettings ++ publishSettings ++ Seq(
     name := "composefree-future",
     libraryDependencies ++= Seq(
       catsCore,
@@ -75,7 +63,6 @@ lazy val future = project.in(file("future"))
       scalaCheck,
     ),
     libraryDependencies ++= forScalaV(scalaVersion.value)(
-      Seq(newtype),
       Seq(newtype),
       Seq(),
     ),
