@@ -67,8 +67,11 @@ trait ComposeOps extends LPSyntax {
 
 trait ComposeFree[M[_]] extends ComposeOps {
   final type RecNode[A] = composefree.RecNode[M, A]
+  final val RecNode: composefree.RecNode.type = composefree.RecNode
   final type RecProg[A] = composefree.RecProg[M, A]
+  final val RecProg: composefree.RecProg.type = composefree.RecProg
   final type RecApProg[A] = composefree.RecApProg[M, A]
+  final val RecApProg: composefree.RecApProg.type = composefree.RecApProg
   final type Composed[A] = composefree.Composed[M, A]
 
   final type ComposeNode[A] = composefree.ComposeNode[M, A]

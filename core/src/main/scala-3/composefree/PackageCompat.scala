@@ -14,6 +14,9 @@ object RecNode {
       case x: ComposeNode[M, A] @unchecked => c(x)
       case x: M[A] @unchecked => m(x)
     }
+
+  inline def liftM[M[_], A](m: M[A]): RecNode[M, A] = m
+  inline def liftCN[M[_], A](c: ComposeNode[M, A]): RecNode[M, A] = c
 }
 
 type RecProg[M[_], A] = Free[RecNode[M, *], A]
