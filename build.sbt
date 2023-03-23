@@ -12,7 +12,7 @@ def forScalaV[A](scalaVersion: String)(_213: => A, _3: => A): A =
   }
 
 lazy val commonSettings = Seq(
-  version := "5.0.1",
+  version := "5.0.2",
   organization := "bondlink",
   scalaVersion := scala3,
   crossScalaVersions := Seq(scala213, scala3),
