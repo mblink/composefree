@@ -56,13 +56,13 @@ instance.
 
 ```scala mdoc:silent
 import cats.data.EitherK
-import composefree.ComposeFree
+import composefree.{ComposeFree, ComposeFreeSyntax}
 
 object Program {
   type Program[A] = EitherK[ConsoleOps, PureOp, A]
 }
 
-object compose extends ComposeFree[Program.Program]
+object compose extends ComposeFree[Program.Program] with ComposeFreeSyntax[Program.Program]
 ```
 
 Last we will create an interpreter for our program type by combining our individual

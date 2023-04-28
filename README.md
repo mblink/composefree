@@ -56,13 +56,13 @@ instance.
 
 ```scala
 import cats.data.EitherK
-import composefree.ComposeFree
+import composefree.{ComposeFree, ComposeFreeSyntax}
 
 object Program {
   type Program[A] = EitherK[ConsoleOps, PureOp, A]
 }
 
-object compose extends ComposeFree[Program.Program]
+object compose extends ComposeFree[Program.Program] with ComposeFreeSyntax[Program.Program]
 ```
 
 Last we will create an interpreter for our program type by combining our individual
@@ -85,20 +85,13 @@ val prog1: compose.Composed[Unit] =
     // implicitly converted to the correct coproduct member type
     _ <- print(s)
   } yield ()
-// prog1: Composed[Unit] = FlatMapped(
-//   c = Suspend(
-//     a = EitherK(
-//       run = Right(
-//         value = EitherK(run = Right(value = pure(a = "Hello world!")))
-//       )
-//     )
-//   ),
-//   f = <function1>
+// prog1: Free[[_$12 >: Nothing <: Any] => RecNode[Program, _$12], Unit] = FlatMapped(
+//   c = Suspend(a = EitherK(run = Right(value = pure(a = "Hello world!")))),
+//   f = repl.MdocSession$MdocApp$$Lambda$19282/0x0000000803d2c220@6be28823
 // )
 
 prog1.runWith(interp)
 // Hello world!
-// res0: Id[Unit] = ()
 ```
 
 Composite commands can be defined in individual DSLs and mixed into
@@ -123,31 +116,24 @@ val prog2 = for {
   _ <- print(s._1)
   _ <- print(s._2)
 } yield ()
-// prog2: free.Free[[β$6$]EitherK[[β$4$]ComposeNode[Program, β$4$], Program, β$6$], Unit] = FlatMapped(
+// prog2: Free[[_$12 >: Nothing <: Any] => RecNode[Program, _$12], Unit] = FlatMapped(
 //   c = FlatMapped(
 //     c = FlatMapped(
 //       c = FlatMapped(
 //         c = FlatMapped(
-//           c = Suspend(
-//             a = EitherK(
-//               run = Right(
-//                 value = EitherK(run = Right(value = pure(a = "Hello")))
-//               )
-//             )
-//           ),
-//           f = cats.free.Free$$Lambda$25374/0x00000008030ae250@3508490
+//           c = Suspend(a = EitherK(run = Right(value = pure(a = "Hello")))),
+//           f = cats.free.Free$$Lambda$19289/0x0000000803d46618@2566365a
 //         ),
-//         f = cats.StackSafeMonad$$Lambda$25375/0x00000008030af900@7203e563
+//         f = cats.StackSafeMonad$$Lambda$19291/0x0000000803d4c000@5bff9b38
 //       ),
-//       f = cats.free.Free$$Lambda$25374/0x00000008030ae250@71b8ccf1
+//       f = cats.free.Free$$Lambda$19289/0x0000000803d46618@42f0d822
 //     ),
-//     f = cats.StackSafeMonad$$Lambda$25375/0x00000008030af900@39cb40b0
+//     f = cats.StackSafeMonad$$Lambda$19291/0x0000000803d4c000@1e9269db
 //   ),
-//   f = <function1>
+//   f = repl.MdocSession$MdocApp$$Lambda$19293/0x0000000803d483d0@ad258b5
 // )
 
 prog2.runWith(interp)
 // Hello
 // World!
-// res1: Id[Unit] = ()
 ```
