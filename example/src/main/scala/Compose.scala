@@ -1,9 +1,9 @@
-package composefree.example
+package composefree
+package example
 
 import cats.~>
 import cats.data.EitherK
 import cats.effect.IO
-import composefree.ComposeFree
 import composefree.puredsl._
 import composefree.example.console._
 import composefree.example.dsl._
@@ -15,7 +15,7 @@ object dsl {
   type Program[A] = EitherK[Console, PN, A]
 }
 
-object examplecompose extends ComposeFree[Program] {
+object examplecompose extends ComposeFree[Program] with ComposeFreeSyntax[Program] {
 
   object RunPureFuture extends (PureOp ~> Future) {
     def apply[A](p: PureOp[A]) = p match {

@@ -65,7 +65,7 @@ trait ComposeOps extends LPSyntax {
   }
 }
 
-trait ComposeFree[M[_]] extends ComposeOps {
+trait ComposeFree[M[_]] {
   final type RecNode[A] = composefree.RecNode[M, A]
   final val RecNode: composefree.RecNode.type = composefree.RecNode
   final type RecProg[A] = composefree.RecProg[M, A]
@@ -81,7 +81,7 @@ trait ComposeFree[M[_]] extends ComposeOps {
   final val ANode: composefree.ANode.type = composefree.ANode
 
   class RecInterp[G[_]: Monad](mg: M ~> G) extends (ComposeNode ~> G) { self =>
-    def interp: RecNode ~> G =
+    final val interp: RecNode ~> G =
       new (RecNode ~> G) {
         def apply[A](n: RecNode[A]) = RecNode.fold(n)(self, mg)
       }
@@ -92,10 +92,10 @@ trait ComposeFree[M[_]] extends ComposeOps {
     }
   }
 
-  def seqRecInterp[G[_]: Monad](mg: M ~> G): RecInterp[G] =
-    new RecInterp[G](mg) {}
+  final def seqRecInterp[G[_]: Monad](mg: M ~> G): RecInterp[G] =
+    new RecInterp[G](mg)
 
-  def recInterp[G[_]](mg: M ~> G)(implicit M: Monad[G], P: Parallel[G]): RecInterp[G] =
+  final def recInterp[G[_]](mg: M ~> G)(implicit M: Monad[G], P: Parallel[G]): RecInterp[G] =
     new RecInterp[G](mg) { self =>
       type P[A] = P.F[A]
 
@@ -132,65 +132,73 @@ trait ComposeFree[M[_]] extends ComposeOps {
       }
     }
 
-  implicit class FOps[F[_], A](fa: F[A])(implicit i: InjectK[F, M]) {
-    def op: RecProg[A] = RecProg.liftM(i.inj(fa))
-    def opAp: RecApProg[A] = RecApProg.liftM(i.inj(fa))
+  @inline final def runComposedSeq[G[_]: Monad, A](mg: M ~> G)(c: Composed[A]): G[A] =
+    c.foldMap(seqRecInterp(mg).interp)
+
+  @inline final def runComposed[G[_]: Monad: Parallel, A](mg: M ~> G)(c: Composed[A]): G[A] =
+    c.foldMap(recInterp(mg).interp)
+
+  @inline final def runComposeNodeSeq[G[_]: Monad, A](mg: M ~> G)(n: ComposeNode[A]): G[A] =
+    RecProg.liftCN(n).foldMap(seqRecInterp(mg).interp)
+
+  @inline final def runComposeNode[G[_]: Monad: Parallel, A](mg: M ~> G)(n: ComposeNode[A]): G[A] =
+    RecApProg.liftCN(n).foldMap(recInterp(mg).interp)
+}
+
+trait ComposeFreeSyntax[M[_]] extends ComposeFree[M] with ComposeOps {
+  final implicit class FOps[F[_], A](fa: F[A])(implicit i: InjectK[F, M]) {
+    final def op: RecProg[A] = RecProg.liftM(i.inj(fa))
+    final def opAp: RecApProg[A] = RecApProg.liftM(i.inj(fa))
   }
 
-  implicit class MOps[A](ma: M[A]) {
-    def op: RecProg[A] = RecProg.liftM(ma)
-    def opAp: RecApProg[A] = RecApProg.liftM(ma)
+  final implicit class MOps[A](ma: M[A]) {
+    final def op: RecProg[A] = RecProg.liftM(ma)
+    final def opAp: RecApProg[A] = RecApProg.liftM(ma)
   }
 
-  implicit class ProgOps[A](pa: RecProg[A]) {
-    def op: RecProg[A] = pa
-    def opAp: RecApProg[A] = RecApProg.liftCN(MNode(pa))
+  final implicit class ProgOps[A](pa: RecProg[A]) {
+    final def op: RecProg[A] = pa
+    final def opAp: RecApProg[A] = RecApProg.liftCN(MNode(pa))
 
-    def runWithSeq[G[_]: Monad](mg: M ~> G): G[A] =
-      pa.foldMap(seqRecInterp(mg).interp)
-
-    def runWith[G[_]: Monad: Parallel](mg: M ~> G): G[A] =
-      pa.foldMap(recInterp(mg).interp)
+    final def runWithSeq[G[_]: Monad](mg: M ~> G): G[A] = runComposedSeq(mg)(pa)
+    final def runWith[G[_]: Monad: Parallel](mg: M ~> G): G[A] = runComposed(mg)(pa)
   }
 
-  implicit class ApProgOps[A](apa: RecApProg[A]) {
-    def op: RecProg[A] = RecProg.liftCN(ANode(apa))
-    def opAp: RecApProg[A] = apa
+  final implicit class ApProgOps[A](apa: RecApProg[A]) {
+    final def op: RecProg[A] = RecProg.liftCN(ANode(apa))
+    final def opAp: RecApProg[A] = apa
   }
 
-  implicit class ComposeNodeOps[A](nfa: ComposeNode[A]) {
-    def op: RecProg[A] = RecProg.liftCN(nfa)
-    def opAp: RecApProg[A] = RecApProg.liftCN(nfa)
+  final implicit class ComposeNodeOps[A](nfa: ComposeNode[A]) {
+    final def op: RecProg[A] = RecProg.liftCN(nfa)
+    final def opAp: RecApProg[A] = RecApProg.liftCN(nfa)
 
-    def runWithSeq[G[_]: Monad](mg: M ~> G): G[A] =
-      nfa.op.foldMap(seqRecInterp(mg).interp)
-
-    def runWith[G[_]: Monad: Parallel](mg: M ~> G): G[A] =
-      nfa.opAp.foldMap(recInterp(mg).interp)
+    final def runWithSeq[G[_]: Monad](mg: M ~> G): G[A] = runComposeNodeSeq(mg)(nfa)
+    final def runWith[G[_]: Monad: Parallel](mg: M ~> G): G[A] = runComposeNode(mg)(nfa)
   }
 
-  implicit class FreeApplicativeOps[A](p: FreeApplicative[M, A]) {
-    def op: Composed[A] =
+  final implicit class FreeApplicativeOps[A](p: FreeApplicative[M, A]) {
+    final def op: Composed[A] =
       p.foldMap(new (M ~> Composed) {
         def apply[a](m: M[a]) = m.op
       })
 
-    def opAp: RecApProg[A] =
+    final def opAp: RecApProg[A] =
       p.foldMap(new (M ~> RecApProg) {
         def apply[a](m: M[a]) = m.opAp
       })
   }
 
   implicit class ComposeFreeOpOps[A](p: Free[M, A]) {
-    def op: Composed[A] =
+    final def op: Composed[A] =
       p.foldMap(new (M ~> Composed) {
         def apply[a](m: M[a]) = m.op
       })
   }
 
-  implicit def f2fnf[F[_], A](fa: F[A])(implicit i: InjectK[F, M]): Composed[A] = fa.op
-  implicit def m2mnm[A](ma: M[A]): Composed[A] = ma.op
-  implicit def nf2fnf[A](nfa: ComposeNode[A]): Composed[A] = nfa.op
+  final implicit def f2fnf[F[_], A](fa: F[A])(implicit i: InjectK[F, M]): Composed[A] = fa.op
+  final implicit def m2mnm[A](ma: M[A]): Composed[A] = ma.op
+  final implicit def nf2fnf[A](nfa: ComposeNode[A]): Composed[A] = nfa.op
 }
 
 object syntax extends ComposeOps
