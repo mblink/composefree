@@ -97,7 +97,7 @@ lazy val example = project.in(file("example"))
 lazy val docs = project.in(file("composefree-docs"))
   .settings(commonSettings ++ Seq(
     mdocOut := file("."),
-    scalacOptions -= "-Xfatal-warnings",
+    scalacOptions ~= (_.filterNot(o => o == "-Xfatal-warnings" || o.startsWith("-Wconf:msg=package"))),
     gitRelease := {}
   ))
   .dependsOn(core, future)
