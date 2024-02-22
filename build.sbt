@@ -1,9 +1,26 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-lazy val scala213 = "2.13.10"
-lazy val scala3 = "3.3.0"
+lazy val scala213 = "2.13.12"
+lazy val scala3 = "3.3.1"
+lazy val scalaVersions = Seq(scala213, scala3)
 
-lazy val kindProjector = compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVersion.full)
+ThisBuild / crossScalaVersions := scalaVersions
+
+// GitHub Actions config
+val javaVersions = Seq(8, 11, 17, 21).map(v => JavaSpec.temurin(v.toString))
+
+ThisBuild / githubWorkflowJavaVersions := javaVersions
+ThisBuild / githubWorkflowArtifactUpload := false
+ThisBuild / githubWorkflowBuildMatrixFailFast := Some(false)
+ThisBuild / githubWorkflowTargetBranches := Seq("master")
+ThisBuild / githubWorkflowPublishTargetBranches := Seq()
+
+def isJava(v: Int) = s"matrix.java == '${javaVersions.find(_.version == v.toString).get.render}'"
+
+ThisBuild / githubWorkflowBuild ++= Seq(
+  WorkflowStep.Sbt(List("example/run"), name = Some("Run example"), cond = Some(isJava(21))),
+  WorkflowStep.Sbt(List("docs/mdoc"), name = Some("Build docs"), cond = Some(isJava(21))),
+)
 
 def forScalaV[A](scalaVersion: String)(_213: => A, _3: => A): A =
   CrossVersion.partialVersion(scalaVersion) match {
@@ -15,7 +32,7 @@ lazy val commonSettings = Seq(
   version := "6.1.0",
   organization := "bondlink",
   scalaVersion := scala3,
-  crossScalaVersions := Seq(scala213, scala3),
+  crossScalaVersions := scalaVersions,
   scalacOptions ++= Seq(
     "-Wconf:msg=package object inheritance is deprecated:s",
   ) ++ forScalaV(scalaVersion.value)(
@@ -23,7 +40,7 @@ lazy val commonSettings = Seq(
     Seq(),
   ),
   libraryDependencies ++= forScalaV(scalaVersion.value)(
-    Seq(kindProjector),
+    Seq(compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVersion.full)),
     Seq(),
   ),
   publish / skip := true
@@ -32,7 +49,7 @@ lazy val commonSettings = Seq(
 commonSettings
 gitRelease := {}
 
-lazy val catsVersion = "2.9.0"
+lazy val catsVersion = "2.10.0"
 lazy val catsCore = "org.typelevel" %% "cats-core" % catsVersion
 lazy val catsFree = "org.typelevel" %% "cats-free" % catsVersion
 lazy val catsLaws = "org.typelevel" %% "cats-laws" % catsVersion % Test
@@ -71,7 +88,7 @@ lazy val future = project.in(file("future"))
 lazy val example = project.in(file("example"))
   .settings(commonSettings ++ Seq(
     name := "composefree-example",
-    libraryDependencies += "org.typelevel" %% "cats-effect" % "3.4.8",
+    libraryDependencies += "org.typelevel" %% "cats-effect" % "3.5.3",
     gitRelease := {}
   ))
   .dependsOn(core, future)
