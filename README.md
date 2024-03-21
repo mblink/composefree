@@ -10,7 +10,7 @@ To use it, include in build.sbt
 ```scala
 resolvers += Resolver.bintrayRepo("bondlink", "composefree")
 
-libraryDependencies += "bondlink" %% "composefree" % "2.0.0"
+libraryDependencies += "bondlink" %% "composefree" % "6.1.1"
 ```
 
 Basic use is a pared down version of the manual process, with the following high level steps:
@@ -87,7 +87,7 @@ val prog1: compose.Composed[Unit] =
   } yield ()
 // prog1: Free[[_$12 >: Nothing <: Any] => RecNode[Program, _$12], Unit] = FlatMapped(
 //   c = Suspend(a = EitherK(run = Right(value = pure(a = "Hello world!")))),
-//   f = repl.MdocSession$MdocApp$$Lambda$19282/0x0000000803d2c220@6be28823
+//   f = repl.MdocSession$MdocApp$$Lambda/0x0000007003e00218@7f2657c7
 // )
 
 prog1.runWith(interp)
@@ -122,15 +122,15 @@ val prog2 = for {
 //       c = FlatMapped(
 //         c = FlatMapped(
 //           c = Suspend(a = EitherK(run = Right(value = pure(a = "Hello")))),
-//           f = cats.free.Free$$Lambda$19289/0x0000000803d46618@2566365a
+//           f = cats.free.Free$$Lambda/0x0000007003e1e000@12fab5f3
 //         ),
-//         f = cats.StackSafeMonad$$Lambda$19291/0x0000000803d4c000@5bff9b38
+//         f = cats.StackSafeMonad$$Lambda/0x0000007003e1f668@4838c135
 //       ),
-//       f = cats.free.Free$$Lambda$19289/0x0000000803d46618@42f0d822
+//       f = cats.free.Free$$Lambda/0x0000007003e1e000@3217ad19
 //     ),
-//     f = cats.StackSafeMonad$$Lambda$19291/0x0000000803d4c000@1e9269db
+//     f = cats.StackSafeMonad$$Lambda/0x0000007003e1f668@3c3c656e
 //   ),
-//   f = repl.MdocSession$MdocApp$$Lambda$19293/0x0000000803d483d0@ad258b5
+//   f = repl.MdocSession$MdocApp$$Lambda/0x0000007003e1d0a8@7b2e1a37
 // )
 
 prog2.runWith(interp)

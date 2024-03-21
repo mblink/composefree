@@ -10,7 +10,7 @@ To use it, include in build.sbt
 ```scala
 resolvers += Resolver.bintrayRepo("bondlink", "composefree")
 
-libraryDependencies += "bondlink" %% "composefree" % "2.0.0"
+libraryDependencies += "bondlink" %% "composefree" % "6.1.1"
 ```
 
 Basic use is a pared down version of the manual process, with the following high level steps:
