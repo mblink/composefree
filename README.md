@@ -1,7 +1,7 @@
-#ComposeFree
+# ComposeFree
 
 ComposeFree is a small lib inspired by Runars
-[Composable Application Architecture](http://functionaltalks.org/2014/11/23/runar-oli-bjarnason-free-monad/)
+[Composable Application Architecture](https://youtu.be/M258zVn4m2M?si=NHCIN8RM2roOJAjv)
 which minimizes the boilerplate required to build an application based on a coproduct of
 Free DSLs.
 
