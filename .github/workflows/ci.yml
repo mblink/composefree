@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        scala: [2.13.13, 3.3.3]
+        scala: [2.13.15, 3.3.4]
         java: [temurin@8, temurin@11, temurin@17, temurin@21]
     runs-on: ${{ matrix.os }}
     steps:
@@ -63,6 +63,9 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: sbt
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
 
       - name: Check that workflows are up to date
         run: sbt '++ ${{ matrix.scala }}' githubWorkflowCheck

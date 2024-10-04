@@ -1,7 +1,7 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-lazy val scala213 = "2.13.13"
-lazy val scala3 = "3.3.3"
+lazy val scala213 = "2.13.15"
+lazy val scala3 = "3.3.4"
 lazy val scalaVersions = Seq(scala213, scala3)
 
 ThisBuild / crossScalaVersions := scalaVersions
@@ -49,12 +49,12 @@ lazy val commonSettings = Seq(
 commonSettings
 gitRelease := {}
 
-lazy val catsVersion = "2.10.0"
+lazy val catsVersion = "2.12.0"
 lazy val catsCore = "org.typelevel" %% "cats-core" % catsVersion
 lazy val catsFree = "org.typelevel" %% "cats-free" % catsVersion
 lazy val catsLaws = "org.typelevel" %% "cats-laws" % catsVersion % Test
 lazy val newtype = "io.estatico" %% "newtype" % "0.4.4"
-lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.17.0" % Test
+lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.1" % Test
 
 lazy val publishSettings = Seq(
   publish / skip := false,
