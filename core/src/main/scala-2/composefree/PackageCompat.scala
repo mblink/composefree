@@ -4,10 +4,6 @@ import cats.~>
 import cats.data.EitherK
 import cats.free.{Free, FreeApplicative}
 
-sealed trait ComposeNode[M[_], A]
-final case class MNode[M[_], A](run: Free[RecNode[M, *], A]) extends ComposeNode[M, A]
-final case class ANode[M[_], A](run: FreeApplicative[RecNode[M, *], A]) extends ComposeNode[M, A]
-
 trait PackageCompat {
   final type RecNode[M[_], A] = EitherK[ComposeNode[M, *], M, A]
   object RecNode {
