@@ -18,7 +18,7 @@ Basic use is a pared down version of the manual process, with the following high
 * Define DSLs as sealed families of case classes
 * Define interpreters for DSLs as natural transformations
 * Define the application Coproduct type for your composed DSLs
-* Create an instance of ComposeFree[YourApplicationType] and import it
+* Create an instance of `ComposeFree[YourApplicationType]` and import it
 
 For example, let's say we wanted to combine a simple Console DSL with the Pure DSL
 provided in the ComposeFree lib.
@@ -85,9 +85,9 @@ val prog1: compose.Composed[Unit] =
     // implicitly converted to the correct coproduct member type
     _ <- print(s)
   } yield ()
-// prog1: Free[[_$12 >: Nothing <: Any] => RecNode[Program, _$12], Unit] = FlatMapped(
+// prog1: Free[[_$8 >: Nothing <: Any] => RecNode[Program, _$8], Unit] = FlatMapped(
 //   c = Suspend(a = EitherK(run = Right(value = pure(a = "Hello world!")))),
-//   f = repl.MdocSession$MdocApp$$Lambda/0x0000007003e00218@7f2657c7
+//   f = repl.MdocSession$MdocApp$$Lambda/0x000000e804891218@6687c3aa
 // )
 
 prog1.runWith(interp)
@@ -116,21 +116,21 @@ val prog2 = for {
   _ <- print(s._1)
   _ <- print(s._2)
 } yield ()
-// prog2: Free[[_$12 >: Nothing <: Any] => RecNode[Program, _$12], Unit] = FlatMapped(
+// prog2: Free[[_$8 >: Nothing <: Any] => RecNode[Program, _$8], Unit] = FlatMapped(
 //   c = FlatMapped(
 //     c = FlatMapped(
 //       c = FlatMapped(
 //         c = FlatMapped(
 //           c = Suspend(a = EitherK(run = Right(value = pure(a = "Hello")))),
-//           f = cats.free.Free$$Lambda/0x0000007003e1e000@12fab5f3
+//           f = cats.free.Free$$Lambda/0x000000e8048b39e0@440856c6
 //         ),
-//         f = cats.StackSafeMonad$$Lambda/0x0000007003e1f668@4838c135
+//         f = cats.StackSafeMonad$$Lambda/0x000000e8048b72b0@335a7829
 //       ),
-//       f = cats.free.Free$$Lambda/0x0000007003e1e000@3217ad19
+//       f = cats.free.Free$$Lambda/0x000000e8048b39e0@3bc225c8
 //     ),
-//     f = cats.StackSafeMonad$$Lambda/0x0000007003e1f668@3c3c656e
+//     f = cats.StackSafeMonad$$Lambda/0x000000e8048b72b0@46f26d21
 //   ),
-//   f = repl.MdocSession$MdocApp$$Lambda/0x0000007003e1d0a8@7b2e1a37
+//   f = repl.MdocSession$MdocApp$$Lambda/0x000000e8048b50a8@40cabd5f
 // )
 
 prog2.runWith(interp)

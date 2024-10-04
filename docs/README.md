@@ -1,7 +1,7 @@
-#ComposeFree
+# ComposeFree
 
 ComposeFree is a small lib inspired by Runars
-[Composable Application Architecture](http://functionaltalks.org/2014/11/23/runar-oli-bjarnason-free-monad/)
+[Composable Application Architecture](https://youtu.be/M258zVn4m2M?si=NHCIN8RM2roOJAjv)
 which minimizes the boilerplate required to build an application based on a coproduct of
 Free DSLs.
 
@@ -18,7 +18,7 @@ Basic use is a pared down version of the manual process, with the following high
 * Define DSLs as sealed families of case classes
 * Define interpreters for DSLs as natural transformations
 * Define the application Coproduct type for your composed DSLs
-* Create an instance of ComposeFree[YourApplicationType] and import it
+* Create an instance of `ComposeFree[YourApplicationType]` and import it
 
 For example, let's say we wanted to combine a simple Console DSL with the Pure DSL
 provided in the ComposeFree lib.

@@ -3,10 +3,6 @@ package composefree
 import cats.~>
 import cats.free.{Free, FreeApplicative}
 
-sealed trait ComposeNode[M[_], A]
-final case class MNode[M[_], A](run: RecProg[M, A]) extends ComposeNode[M, A]
-final case class ANode[M[_], A](run: FreeApplicative[RecNode[M, *], A]) extends ComposeNode[M, A]
-
 type RecNode[M[_], A] = ComposeNode[M, A] | M[A]
 object RecNode {
   inline def fold[M[_], F[_], A](n: RecNode[M, A])(c: ComposeNode[M, *] ~> F, m: M ~> F): F[A] =
