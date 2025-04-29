@@ -47,7 +47,6 @@ lazy val commonSettings = Seq(
 )
 
 commonSettings
-gitRelease := {}
 
 lazy val catsVersion = "2.12.0"
 lazy val catsCore = "org.typelevel" %% "cats-core" % catsVersion
@@ -58,8 +57,8 @@ lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.1" % Test
 
 lazy val publishSettings = Seq(
   publish / skip := false,
-  gitPublishDir := file("/src/maven-repo"),
   licenses += License.Apache2,
+  publishTo := Some("GitHub Package Registry".at("https://maven.pkg.github.com/mblink/composefree")),
 )
 
 lazy val core = project.in(file("core"))
@@ -89,7 +88,6 @@ lazy val example = project.in(file("example"))
   .settings(commonSettings ++ Seq(
     name := "composefree-example",
     libraryDependencies += "org.typelevel" %% "cats-effect" % "3.5.4",
-    gitRelease := {}
   ))
   .dependsOn(core, future)
   .aggregate(core, future)
@@ -98,7 +96,6 @@ lazy val docs = project.in(file("composefree-docs"))
   .settings(commonSettings ++ Seq(
     mdocOut := file("."),
     scalacOptions ~= (_.filterNot(o => o == "-Xfatal-warnings" || o.startsWith("-Wconf:msg=package"))),
-    gitRelease := {}
   ))
   .dependsOn(core, future)
   .enablePlugins(MdocPlugin)
