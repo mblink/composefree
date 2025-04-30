@@ -58,7 +58,7 @@ lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.1" % Test
 lazy val publishSettings = Seq(
   publish / skip := false,
   licenses += License.Apache2,
-  publishTo := Some("GitHub Package Registry".at("https://maven.pkg.github.com/mblink/composefree")),
+  publishTo := Some("BondLink S3".at("s3://bondlink-maven-repo")),
 )
 
 lazy val core = project.in(file("core"))

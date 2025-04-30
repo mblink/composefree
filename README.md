@@ -8,7 +8,7 @@ Free DSLs.
 To use it, include in build.sbt
 
 ```scala
-resolvers += "GitHub Packages (composefree)" at "https://maven.pkg.github.com/mblink/composefree"
+resolvers += "bondlink-maven-repo" at "https://s3.amazonaws.com/bondlink-maven-repo"
 
 libraryDependencies += "bondlink" %% "composefree" % "7.0.0"
 ```
