@@ -8,7 +8,7 @@ Free DSLs.
 To use it, include in build.sbt
 
 ```scala
-resolvers += Resolver.bintrayRepo("bondlink", "composefree")
+resolvers += "bondlink-maven-repo" at "https://maven.bondlink-cdn.com"
 
 libraryDependencies += "bondlink" %% "composefree" % "6.1.1"
 ```
