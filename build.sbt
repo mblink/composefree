@@ -7,7 +7,7 @@ lazy val scalaVersions = Seq(scala213, scala3)
 ThisBuild / crossScalaVersions := scalaVersions
 
 // GitHub Actions config
-val javaVersions = Seq(8, 11, 17, 21).map(v => JavaSpec.temurin(v.toString))
+val javaVersions = Seq(8, 11, 17, 21, 25).map(v => JavaSpec.temurin(v.toString))
 
 ThisBuild / githubWorkflowJavaVersions := javaVersions
 ThisBuild / githubWorkflowArtifactUpload := false
@@ -18,8 +18,8 @@ ThisBuild / githubWorkflowPublishTargetBranches := Seq()
 def isJava(v: Int) = s"matrix.java == '${javaVersions.find(_.version == v.toString).get.render}'"
 
 ThisBuild / githubWorkflowBuild ++= Seq(
-  WorkflowStep.Sbt(List("example/run"), name = Some("Run example"), cond = Some(isJava(21))),
-  WorkflowStep.Sbt(List("docs/mdoc"), name = Some("Build docs"), cond = Some(isJava(21))),
+  WorkflowStep.Sbt(List("example/run"), name = Some("Run example"), cond = Some(isJava(25))),
+  WorkflowStep.Sbt(List("docs/mdoc"), name = Some("Build docs"), cond = Some(isJava(25))),
 )
 
 def forScalaV[A](scalaVersion: String)(_213: => A, _3: => A): A =

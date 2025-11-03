@@ -24,7 +24,12 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         scala: [2.13.17, 3.3.7]
-        java: [temurin@8, temurin@11, temurin@17, temurin@21]
+        java:
+          - temurin@8
+          - temurin@11
+          - temurin@17
+          - temurin@21
+          - temurin@25
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (full)
@@ -64,6 +69,14 @@ jobs:
           java-version: 21
           cache: sbt
 
+      - name: Setup Java (temurin@25)
+        if: matrix.java == 'temurin@25'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: sbt
+
       - name: Setup sbt
         uses: sbt/setup-sbt@v1
 
@@ -74,9 +87,9 @@ jobs:
         run: sbt '++ ${{ matrix.scala }}' test
 
       - name: Run example
-        if: matrix.java == 'temurin@21'
+        if: matrix.java == 'temurin@25'
         run: sbt '++ ${{ matrix.scala }}' example/run
 
       - name: Build docs
-        if: matrix.java == 'temurin@21'
+        if: matrix.java == 'temurin@25'
         run: sbt '++ ${{ matrix.scala }}' docs/mdoc
