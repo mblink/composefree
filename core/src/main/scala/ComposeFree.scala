@@ -83,7 +83,7 @@ trait ComposeFree[M[_]] {
   class RecInterp[G[_]: Monad](mg: M ~> G) extends (ComposeNode ~> G) { self =>
     final val interp: RecNode ~> G =
       new (RecNode ~> G) {
-        def apply[A](n: RecNode[A]) = RecNode.fold(n)(self, mg)
+        def apply[A](n: RecNode[A]) = RecNode.fold[M, G, A](n)(self, mg)
       }
 
     def apply[A](cn: ComposeNode[A]): G[A] = cn match {
@@ -116,7 +116,7 @@ trait ComposeFree[M[_]] {
       lazy val mp: M ~> P = mg.andThen(P.parallel)
 
       lazy val rnp: RecNode ~> P = new (RecNode ~> P) {
-        def apply[A](n: RecNode[A]) = RecNode.fold(n)(cnp, mp)
+        def apply[A](n: RecNode[A]) = RecNode.fold[M, P, A](n)(cnp, mp)
       }
 
       lazy val cnp: ComposeNode ~> P = new (ComposeNode ~> P) {

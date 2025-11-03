@@ -21,7 +21,7 @@ object numbers {
     } yield r
 
   object RunNumbersFuture {
-    def apply() = new (Numbers ~> Future) {
+    def apply(): Numbers ~> Future = new (Numbers ~> Future) {
       var x = 0
       def apply[A](n: Numbers[A]) = n match {
         case set(i) => Future.successful({ x = i })
@@ -33,7 +33,7 @@ object numbers {
   }
 
   object RunNumbersIO {
-    def apply() = new (Numbers ~> IO) {
+    def apply(): Numbers ~> IO = new (Numbers ~> IO) {
       var x = 0
       def apply[A](n: Numbers[A]) = n match {
         case set(i) => IO.pure({ x = i })
