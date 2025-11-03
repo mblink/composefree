@@ -40,7 +40,7 @@ lazy val commonSettings = Seq(
     Seq(),
   ),
   libraryDependencies ++= forScalaV(scalaVersion.value)(
-    Seq(compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.3" cross CrossVersion.full)),
+    Seq(compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.4" cross CrossVersion.full)),
     Seq(),
   ),
   publish / skip := true
