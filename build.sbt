@@ -87,7 +87,7 @@ lazy val future = project.in(file("future"))
 lazy val example = project.in(file("example"))
   .settings(commonSettings ++ Seq(
     name := "composefree-example",
-    libraryDependencies += "org.typelevel" %% "cats-effect" % "3.5.7",
+    libraryDependencies += "org.typelevel" %% "cats-effect" % "3.6.3",
   ))
   .dependsOn(core, future)
   .aggregate(core, future)
