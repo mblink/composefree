@@ -10,7 +10,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object ParFutureTests extends Properties("ParFuture") {
+object ParFutureTestsHelper {
   val timeout = 3.seconds
 
   def futureEither[A](f: Future[A]): Future[Either[Throwable, A]] =
@@ -34,6 +34,10 @@ object ParFutureTests extends Properties("ParFuture") {
   // Need non-fatal Throwables for Future recoverWith/handleError
   implicit val nonFatalArbitrary: Arbitrary[Throwable] =
     Arbitrary(Arbitrary.arbitrary[Exception].map(identity))
+}
+
+object ParFutureTests extends Properties("ParFuture") {
+  import ParFutureTestsHelper._
 
   include(ApplicativeErrorTests[ParFuture, Throwable].applicative[Int, Int, Int].all)
   include(ParallelTests[Future, ParFuture].parallel[Int, String].all)
