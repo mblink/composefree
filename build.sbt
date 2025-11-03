@@ -53,7 +53,7 @@ lazy val catsCore = "org.typelevel" %% "cats-core" % catsVersion
 lazy val catsFree = "org.typelevel" %% "cats-free" % catsVersion
 lazy val catsLaws = "org.typelevel" %% "cats-laws" % catsVersion % Test
 lazy val newtype = "io.estatico" %% "newtype" % "0.4.4"
-lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.18.1" % Test
+lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.19.0" % Test
 
 lazy val publishSettings = Seq(
   publish / skip := false,
