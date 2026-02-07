@@ -95,7 +95,7 @@ lazy val example = project.in(file("example"))
 lazy val docs = project.in(file("composefree-docs"))
   .settings(commonSettings ++ Seq(
     mdocOut := file("."),
-    scalacOptions ~= (_.filterNot(o => o == "-Xfatal-warnings" || o.startsWith("-Wconf:msg=package"))),
+    scalacOptions ~= (_.filterNot(o => o == "-Werror" || o.startsWith("-Wconf:msg=package"))),
   ))
   .dependsOn(core, future)
   .enablePlugins(MdocPlugin)
