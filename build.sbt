@@ -2,9 +2,8 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val scala213 = "2.13.18"
 lazy val scala3 = "3.3.7"
-lazy val scalaVersions = Seq(scala213, scala3)
 
-ThisBuild / crossScalaVersions := scalaVersions
+ThisBuild / scalaVersion := scala3
 
 // GitHub Actions config
 val javaVersions = Seq(8, 11, 17, 21, 25).map(v => JavaSpec.temurin(v.toString))
@@ -17,9 +16,10 @@ ThisBuild / githubWorkflowPublishTargetBranches := Seq()
 
 def isJava(v: Int) = s"matrix.java == '${javaVersions.find(_.version == v.toString).get.render}'"
 
-ThisBuild / githubWorkflowBuild ++= Seq(
-  WorkflowStep.Sbt(List("example/run"), name = Some("Run example"), cond = Some(isJava(25))),
-  WorkflowStep.Sbt(List("docs/mdoc"), name = Some("Build docs"), cond = Some(isJava(25))),
+ThisBuild / githubWorkflowBuild := Seq(
+  WorkflowStep.Run(List("sbt test"), name = Some("Build project")),
+  WorkflowStep.Run(List("sbt example/run"), name = Some("Run example"), cond = Some(isJava(25))),
+  WorkflowStep.Run(List("sbt mdoc"), name = Some("Build docs"), cond = Some(isJava(25))),
 )
 
 def forScalaV[A](scalaVersion: String)(_213: => A, _3: => A): A =
@@ -31,8 +31,6 @@ def forScalaV[A](scalaVersion: String)(_213: => A, _3: => A): A =
 lazy val commonSettings = Seq(
   version := "7.0.0",
   organization := "bondlink",
-  scalaVersion := scala3,
-  crossScalaVersions := scalaVersions,
   scalacOptions ++= Seq(
     "-Wconf:msg=package object inheritance is deprecated:s",
   ) ++ forScalaV(scalaVersion.value)(
@@ -48,6 +46,11 @@ lazy val commonSettings = Seq(
 
 commonSettings
 
+def baseProj(id: String, nme: String) =
+  sbt.internal.ProjectMatrix(id, file(id))
+    .jvmPlatform(scalaVersions = Seq(scala213, scala3))
+    .settings(commonSettings ++ Seq(name := nme))
+
 lazy val catsVersion = "2.13.0"
 lazy val catsCore = "org.typelevel" %% "cats-core" % catsVersion
 lazy val catsFree = "org.typelevel" %% "cats-free" % catsVersion
@@ -61,18 +64,16 @@ lazy val publishSettings = Seq(
   publishTo := Some("BondLink S3".at("s3://bondlink-maven-repo")),
 )
 
-lazy val core = project.in(file("core"))
-  .settings(commonSettings ++ publishSettings ++ Seq(
-    name := "composefree",
+lazy val core = baseProj("core", "composefree")
+  .settings(publishSettings ++ Seq(
     libraryDependencies ++= Seq(
       catsCore,
       catsFree
     )
   ))
 
-lazy val future = project.in(file("future"))
-  .settings(commonSettings ++ publishSettings ++ Seq(
-    name := "composefree-future",
+lazy val future = baseProj("future", "composefree-future")
+  .settings(publishSettings ++ Seq(
     libraryDependencies ++= Seq(
       catsCore,
       catsLaws,
@@ -84,15 +85,13 @@ lazy val future = project.in(file("future"))
     ),
   ))
 
-lazy val example = project.in(file("example"))
-  .settings(commonSettings ++ Seq(
-    name := "composefree-example",
-    libraryDependencies += "org.typelevel" %% "cats-effect" % "3.7.0",
-  ))
+lazy val example = baseProj("example", "composefree-example")
+  .settings(libraryDependencies += "org.typelevel" %% "cats-effect" % "3.7.0")
   .dependsOn(core, future)
   .aggregate(core, future)
 
-lazy val docs = project.in(file("composefree-docs"))
+lazy val docs = projectMatrix.in(file("composefree-docs"))
+  .jvmPlatform(scalaVersions = Seq(scala3))
   .settings(commonSettings ++ Seq(
     mdocOut := file("."),
     scalacOptions ~= (_.filterNot(o => o == "-Werror" || o.startsWith("-Wconf:msg=package"))),
