@@ -1,5 +1,6 @@
 addSbtPlugin("com.eed3si9n" % "sbt-projectmatrix" % "0.11.0")
+addSbtPlugin("com.frugalmechanic" % "fm-sbt-s3-resolver" % "0.23.0")
 addSbtPlugin("com.github.sbt" % "sbt-github-actions" % "0.30.0")
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.9.0")
 addSbtPlugin("org.typelevel" % "sbt-tpolecat" % "0.5.5")
-addSbtPlugin("com.frugalmechanic" % "fm-sbt-s3-resolver" % "0.23.0")
+addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.1.5")

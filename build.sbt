@@ -18,6 +18,7 @@ def isJava(v: Int) = s"matrix.java == '${javaVersions.find(_.version == v.toStri
 
 ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Run(List("sbt test"), name = Some("Build project")),
+  WorkflowStep.Run(List("sbt mimaReportBinaryIssues"), name = Some("Check binary compatibility"), cond = Some(isJava(25))),
   WorkflowStep.Run(List("sbt example/run"), name = Some("Run example"), cond = Some(isJava(25))),
   WorkflowStep.Run(List("sbt mdoc"), name = Some("Build docs"), cond = Some(isJava(25))),
 )
@@ -41,7 +42,8 @@ lazy val commonSettings = Seq(
     Seq(compilerPlugin("org.typelevel" %% "kind-projector" % "0.13.4" cross CrossVersion.full)),
     Seq(),
   ),
-  publish / skip := true
+  publish / skip := true,
+  mimaFailOnNoPrevious := false,
 )
 
 commonSettings
@@ -62,6 +64,8 @@ lazy val publishSettings = Seq(
   publish / skip := false,
   licenses += License.Apache2,
   publishTo := Some("BondLink S3".at("s3://bondlink-maven-repo")),
+  resolvers += "bondlink-maven-repo" at "https://maven.bondlink-cdn.com",
+  mimaPreviousArtifacts := Set(organization.value %% name.value % "7.0.0"),
 )
 
 lazy val core = baseProj("core", "composefree")
