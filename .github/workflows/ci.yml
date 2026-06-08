@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        scala: [2.13.18, 3.3.7]
+        scala: [3.3.7]
         java:
           - temurin@8
           - temurin@11
@@ -84,12 +84,12 @@ jobs:
         run: sbt '++ ${{ matrix.scala }}' githubWorkflowCheck
 
       - name: Build project
-        run: sbt '++ ${{ matrix.scala }}' test
+        run: sbt test
 
       - name: Run example
         if: matrix.java == 'temurin@25'
-        run: sbt '++ ${{ matrix.scala }}' example/run
+        run: sbt example/run
 
       - name: Build docs
         if: matrix.java == 'temurin@25'
-        run: sbt '++ ${{ matrix.scala }}' docs/mdoc
+        run: sbt mdoc
