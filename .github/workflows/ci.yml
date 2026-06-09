@@ -86,6 +86,10 @@ jobs:
       - name: Build project
         run: sbt test
 
+      - name: Check binary compatibility
+        if: matrix.java == 'temurin@25'
+        run: sbt mimaReportBinaryIssues
+
       - name: Run example
         if: matrix.java == 'temurin@25'
         run: sbt example/run
