@@ -48,8 +48,8 @@ lazy val commonSettings = Seq(
 
 commonSettings
 
-def baseProj(id: String, nme: String) =
-  sbt.internal.ProjectMatrix(id, file(id))
+def baseProj(matrix: ProjectMatrix, nme: String) =
+  matrix
     .jvmPlatform(scalaVersions = Seq(scala213, scala3))
     .settings(commonSettings ++ Seq(name := nme))
 
@@ -68,7 +68,7 @@ lazy val publishSettings = Seq(
   mimaPreviousArtifacts := Set(organization.value %% name.value % "7.0.0"),
 )
 
-lazy val core = baseProj("core", "composefree")
+lazy val core = baseProj(projectMatrix.in(file("core")), "composefree")
   .settings(publishSettings ++ Seq(
     libraryDependencies ++= Seq(
       catsCore,
@@ -76,7 +76,7 @@ lazy val core = baseProj("core", "composefree")
     )
   ))
 
-lazy val future = baseProj("future", "composefree-future")
+lazy val future = baseProj(projectMatrix.in(file("future")), "composefree-future")
   .settings(publishSettings ++ Seq(
     libraryDependencies ++= Seq(
       catsCore,
@@ -89,7 +89,7 @@ lazy val future = baseProj("future", "composefree-future")
     ),
   ))
 
-lazy val example = baseProj("example", "composefree-example")
+lazy val example = baseProj(projectMatrix.in(file("example")), "composefree-example")
   .settings(libraryDependencies += "org.typelevel" %% "cats-effect" % "3.7.0")
   .dependsOn(core, future)
   .aggregate(core, future)
