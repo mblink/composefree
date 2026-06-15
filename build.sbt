@@ -63,7 +63,7 @@ lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.19.0" % Test
 lazy val publishSettings = Seq(
   publish / skip := false,
   licenses += License.Apache2,
-  publishTo := Some("BondLink S3".at("s3://bondlink-maven-repo")),
+  s3PublishBucket := "bondlink-maven-repo",
   resolvers += "bondlink-maven-repo" at "https://maven.bondlink-cdn.com",
   mimaPreviousArtifacts := Set(organization.value %% name.value % "7.0.0"),
 )
