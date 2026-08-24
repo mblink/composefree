@@ -90,7 +90,7 @@ lazy val future = baseProj("future", "composefree-future")
   ))
 
 lazy val example = baseProj("example", "composefree-example")
-  .settings(libraryDependencies += "org.typelevel" %% "cats-effect" % "3.7.0")
+  .settings(libraryDependencies += "org.typelevel" %% "cats-effect" % "3.7.1")
   .dependsOn(core, future)
   .aggregate(core, future)
 
